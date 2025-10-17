@@ -44,14 +44,17 @@ def get_mariadb_status():
         db_port_str = os.getenv("MARIADB_PORT")
         
         # Establish the connection, making sure to convert the port to an integer
+        ssl_ca_path = "ca.pem"
+
         connection = mysql.connector.connect(
             host=os.getenv("MARIADB_HOST"),
             user=os.getenv("MARIADB_USER"),
             password=os.getenv("MARIADB_PASSWORD"),
             database=os.getenv("MARIADB_DATABASE"),
-            port=int(db_port_str)
+            port=int(db_port_str), 
+            # --- ADD THIS SSL ARGUMENT ---
+            ssl_ca=ssl_ca_path
         )
-        
         # If the connection object is created and is_connected() is true, it's a success
         if connection.is_connected():
             connection.close() # Close the connection immediately after checking
