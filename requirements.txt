@@ -1,0 +1,4 @@
+Flask
+pymongo
+mysql-connector-python
+python-dotenv
