@@ -1,6 +1,178 @@
 import requests 
 from bs4 import BeautifulSoup
 import json 
+from dotenv import load_dotenv
+from project.db import get_mongo_client
+
+load_dotenv()
+def transform_and_load_statistics(client, stats_data):
+    """
+    Transforms and loads statistics into the 'statistics' collection,
+    with one document per year.
+    """
+    if not client or not stats_data:
+        print("No client or statistics data provided.")
+        return
+        
+    db = client.get_database("event_calendar") 
+    statistics_collection = db.statistics
+
+    stats_by_year = {}
+    
+    for item in stats_data.get("government_contribution", []):
+        year = int(item.get("year"))
+        if year not in stats_by_year:
+            stats_by_year[year] = {"gov_contributions": [], "employment_items": [], "activities": []}
+        stats_by_year[year]["gov_contributions"].append({
+            "type": item.get("contributiontype"),
+            "amount_mil": float(item.get("amount"))
+        })
+
+    for item in stats_data.get("employment_item", []):
+        year = int(item.get("year"))
+        if year not in stats_by_year:
+            stats_by_year[year] = {"gov_contributions": [], "employment_items": [], "activities": []}
+        stats_by_year[year]["employment_items"].append({
+            "artform": item.get("artform"),
+            "employment": int(item.get("employment"))
+        })
+
+    for item in stats_data.get("activities", []):
+        year = int(item.get("year"))
+        if year not in stats_by_year:
+            stats_by_year[year] = {"gov_contributions": [], "employment_items": [], "activities": []}
+        stats_by_year[year]["activities"].append({
+            "type": item.get("type"),
+            "number": int(item.get("number"))
+        })
+
+    if not stats_by_year:
+        print("No statistics data found to load.")
+        return
+
+    for year, data in stats_by_year.items():
+        statistics_document = {
+            "year": year,
+            "gov_contributions": data["gov_contributions"],
+            "employment_items": data["employment_items"],
+            "activities": data["activities"]
+        }
+        
+        statistics_collection.update_one(
+            {'year': year},
+            {'$set': statistics_document},
+            upsert=True
+        )
+
+    print(f"Successfully loaded or updated statistics for {len(stats_by_year)} years.")
+
+
+def transform_and_load_statistics(client, stats_data):
+    """
+    Transforms and loads statistics into the 'statistics' collection,
+    with one document per year.
+    """
+    if not client or not stats_data:
+        return
+        
+    db = client.get_database("event_calendar") # Using the correct DB name
+    statistics_collection = db.statistics
+
+    # 1. Group all raw statistics by year
+    stats_by_year = {}
+    
+    for item in stats_data.get("government_contribution", []):
+        year = int(item.get("year"))
+        if year not in stats_by_year:
+            stats_by_year[year] = {"gov_contributions": [], "employment_items": [], "activities": []}
+        stats_by_year[year]["gov_contributions"].append({
+            "type": item.get("contributiontype"),
+            "amount_mil": float(item.get("amount"))
+        })
+
+    for item in stats_data.get("employment_item", []):
+        year = int(item.get("year"))
+        if year not in stats_by_year:
+            stats_by_year[year] = {"gov_contributions": [], "employment_items": [], "activities": []}
+        stats_by_year[year]["employment_items"].append({
+            "artform": item.get("artform"),
+            "employment": int(item.get("employment"))
+        })
+
+    for item in stats_data.get("activities", []):
+        year = int(item.get("year"))
+        if year not in stats_by_year:
+            stats_by_year[year] = {"gov_contributions": [], "employment_items": [], "activities": []}
+        stats_by_year[year]["activities"].append({
+            "type": item.get("type"),
+            "number": int(item.get("number"))
+        })
+
+    # 2. Iterate through each year and upsert a document
+    if not stats_by_year:
+        print("No statistics data found to load.")
+        return
+
+    for year, data in stats_by_year.items():
+        # Create the document for the current year
+        statistics_document = {
+            "year": year,
+            "gov_contributions": data["gov_contributions"],
+            "employment_items": data["employment_items"],
+            "activities": data["activities"]
+        }
+        
+        # Use year as the unique key to update or insert
+        statistics_collection.update_one(
+            {'year': year},
+            {'$set': statistics_document},
+            upsert=True
+        )
+
+    print(f"Successfully loaded/updated statistics for {len(stats_by_year)} years.")
+
+
+def transform_and_load_events(client, events_data):
+    """Transforms scraped event data and upserts it into the 'events' collection."""
+    if not client or not events_data:
+        return
+    
+    db = client.get_database("event_calendar") 
+    events_collection = db.events
+
+    for event in events_data:
+        if not event.get("title") or "not found" in event.get("title").lower() or not event.get("source"):
+            print(f"Skipping invalid event data: {event.get('title')}")
+            continue
+
+        mongo_event = {
+            "title": event.get("title"),
+            "description": event.get("description", ""),
+            "start_date": event.get("start_date"),
+            "end_date": event.get("end_date"),
+            "venue_name": event.get("venue_name"),
+            "address": event.get("address", ""),
+            "image_url": event.get("image_url"),
+            "registration_link": event.get("registration_link"),
+            "source": event.get("source") 
+        }
+
+        events_collection.update_one(
+            {'source': mongo_event['source']},
+            {'$set': mongo_event},
+            upsert=True
+        )
+    
+    site = "N/A"
+    if events_data:
+        if "artsrepublic" in events_data[0].get("source", ""):
+            site = "artsrepublic.sg"
+        elif "eventfinda" in events_data[0].get("source", ""):
+            site = "eventfinda.sg"
+
+    print(f"Successfully loaded/updated {len(events_data)} events for site: {site}.")
+
+
 def fetch_gov_statistics():
 
     urls = {
@@ -169,9 +341,8 @@ def scrape_eventfinda_detail_page(url):
     """Scrapes the details from a single event page on Eventfinda."""
     print(f"Scraping detail page: {url}")
     try:
-        fullUrl = "https://www.eventfinda.sg" + url
-
-        response = requests.get(fullUrl, timeout=10)
+        full_url = "https://www.eventfinda.sg" + url
+        response = requests.get(full_url, timeout=10)
         response.encoding = 'utf-8'
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -185,11 +356,19 @@ def scrape_eventfinda_detail_page(url):
         venue = venue_element.text.strip() if venue_element else "Venue not found"
         
         address_element = soup.select_one("span.adr")
-        address = address_element.text.strip() if address_element else venue # Default to venue if no specific address
+        address = address_element.text.strip() if address_element else venue
 
-        date_element = soup.select_one("p.session span.date")
-        date_str = date_element.text.strip() if date_element else "Date not found"
-        
+        start_date_iso = soup.select_one("span.dtstart span.value-title")
+        end_date_iso = soup.select_one("span.dtend span.value-title")
+
+        start_date = "Start date not found"
+        if start_date_iso and start_date_iso.has_attr('title'):
+            start_date = start_date_iso['title'].split('T')[0]
+
+        end_date = start_date 
+        if end_date_iso and end_date_iso.has_attr('title'):
+            end_date = end_date_iso['title'].split('T')[0]
+
         description_div = soup.select_one("div.module.description")
         short_description = ""
         if description_div:
@@ -203,30 +382,33 @@ def scrape_eventfinda_detail_page(url):
         return {
             "title": title,
             "description": short_description,
-            "date_string": date_str,
+            "start_date": start_date,
+            "end_date": end_date,
             "venue_name": venue,
             "address": address,
             "image_url": image_url,
             "registration_link": registration_link,
-            "source": fullUrl
+            "source": full_url
         }
 
     except Exception as e:
         print(f"Error scraping detail page {url}: {e}")
         return None
-    
 if __name__ == "__main__":
-    
-    statistics = fetch_gov_statistics()
-    print("\n--- Fetched Statistics Data ---")
-    print(json.dumps(statistics, indent=2))
+    mongo_client = get_mongo_client()
+    if mongo_client:
+        statistics_data = fetch_gov_statistics()
+        transform_and_load_statistics(mongo_client, statistics_data)
 
-    artsrepublic_events = scrape_artsrepublic_sg()
-    print("\n--- Scraped ArtsRepublic.sg Event Data ---")
-    
-    print(json.dumps(artsrepublic_events, indent=2, ensure_ascii=False))
-    
-    eventfinda_events = scrape_eventfinda_sg()
-    print("\n--- Scraped Eventfinda.sg Event Data ---")
-    
-    print(json.dumps(eventfinda_events, indent=2, ensure_ascii=False))
+        artsrepublic_events = scrape_artsrepublic_sg()
+        if artsrepublic_events: 
+            transform_and_load_events(mongo_client, artsrepublic_events)
+        
+        eventfinda_events = scrape_eventfinda_sg()
+        if eventfinda_events: 
+            transform_and_load_events(mongo_client, eventfinda_events)
+        
+        mongo_client.close()
+        print("\nMongoDB connection closed.")
+    else:
+        print("Could not connect to MongoDB. Aborting script.")
