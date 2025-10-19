@@ -2,3 +2,5 @@ Flask
 pymongo
 mysql-connector-python
 python-dotenv
+requests
+beautifulsoup4
