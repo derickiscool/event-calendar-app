@@ -1,7 +1,5 @@
-# run.py
-from project import create_app  # Import the app factory function
 
-app = create_app()  # Call the factory function to create the app instance
+from project import app # Import the app instance from our project package
 
 if __name__ == "__main__":
-    app.run(debug=True)  # Run the app
+    app.run(debug=True)
