@@ -1,6 +1,6 @@
 # routes/venue.py
 from flask import Blueprint, request, jsonify
-from models import db, Venue
+from project.models import db, Venue
 
 venue_bp = Blueprint("venue", __name__)
 

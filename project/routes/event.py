@@ -1,6 +1,6 @@
 # routes/event.py
 from flask import Blueprint, request, jsonify
-from models import db, Event
+from project.models import db, Event
 
 event_bp = Blueprint("event", __name__)
 

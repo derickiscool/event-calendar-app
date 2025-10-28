@@ -1,6 +1,6 @@
 # routes/user_preference.py
 from flask import Blueprint, request, jsonify
-from models import db, UserPreference
+from project.models import db, UserPreference
 
 user_preference_bp = Blueprint("user_preference", __name__)
 

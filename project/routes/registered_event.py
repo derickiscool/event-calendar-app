@@ -1,6 +1,6 @@
 # routes/registered_event.py
 from flask import Blueprint, request, jsonify
-from models import db, RegisteredEvent
+from project.models import db, RegisteredEvent
 from datetime import datetime
 
 registered_event_bp = Blueprint("registered_event", __name__)

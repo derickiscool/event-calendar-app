@@ -1,6 +1,6 @@
 # routes/tag.py
 from flask import Blueprint, request, jsonify
-from models import db, Tag
+from project.models import db, Tag
 
 tag_bp = Blueprint("tag", __name__)
 

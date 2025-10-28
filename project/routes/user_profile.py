@@ -1,6 +1,6 @@
 # routes/user_profile.py
 from flask import Blueprint, request, jsonify
-from models import db, UserProfile
+from project.models import db, UserProfile
 
 user_profile_bp = Blueprint("user_profile", __name__)
 

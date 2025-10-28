@@ -1,6 +1,6 @@
 # routes/event_tag.py
 from flask import Blueprint, request, jsonify
-from models import db, EventTag
+from project.models import db, EventTag
 
 event_tag_bp = Blueprint("event_tag", __name__)
 

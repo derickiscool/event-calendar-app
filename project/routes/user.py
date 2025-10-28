@@ -1,6 +1,6 @@
 # routes/user.py
 from flask import Blueprint, request, jsonify
-from models import db, User, UserProfile
+from project.models import db, User, UserProfile
 from werkzeug.security import generate_password_hash
 
 user_bp = Blueprint("user", __name__)
