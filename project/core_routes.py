@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, render_template, jsonify
 from project.db import get_mongo_status, get_mariadb_status 
 
 # Define a Blueprint for the core routes
@@ -6,8 +6,38 @@ main_bp = Blueprint('main', __name__)
 
 @main_bp.route("/")
 def index():
-    """A simple root endpoint to show the server is running."""
-    return "<h1>Event Calendar Backend is Running!</h1>"
+    """Render the main index page with dark theme."""
+    return render_template('index.html')
+
+@main_bp.route("/login")
+def login():
+    """Render the login page."""
+    return render_template('login.html')
+
+@main_bp.route("/register")
+def register():
+    """Render the register page."""
+    return render_template('register.html')
+
+@main_bp.route("/profile")
+def profile():
+    """Render the profile page."""
+    return render_template('profile.html')
+
+@main_bp.route("/event-new")
+def event_new():
+    """Render the create event page."""
+    return render_template('event-new.html')
+
+@main_bp.route("/event-edit")
+def event_edit():
+    """Render the edit event page."""
+    return render_template('event-edit.html')
+
+@main_bp.route("/event-detail")
+def event_detail():
+    """Render the event detail page."""
+    return render_template('event-detail.html')
 
 @main_bp.route("/health")
 def health_check():
@@ -15,7 +45,6 @@ def health_check():
     mongo_status = get_mongo_status()
     mariadb_status = get_mariadb_status()
     
-    # Logic from your file
     if mongo_status == "connected" and mariadb_status == "connected":
         status_code = 200
     else:

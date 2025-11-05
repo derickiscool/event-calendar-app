@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 
@@ -8,7 +9,16 @@ load_dotenv()
 # --- 2. Create the Flask App Instance ---
 app = Flask(__name__)
 
-# --- 3. Configure Flask-SQLAlchemy for MariaDB ---
+# --- 3.Enable CORS for frontend integration ---
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:*", "http://127.0.0.1:*"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# --- 4. Configure Flask-SQLAlchemy for MariaDB ---
 MARIADB_URI = (
     f"mysql+mysqlconnector://{os.getenv('MARIADB_USER')}:"
     f"{os.getenv('MARIADB_PASSWORD')}@"
@@ -21,11 +31,11 @@ MARIADB_URI = (
 app.config["SQLALCHEMY_DATABASE_URI"] = MARIADB_URI
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False 
 
-# --- 4. Initialize SQLAlchemy and Import Models ---
+# --- 5. Initialize SQLAlchemy and Import Models ---
 from .models import db 
 db.init_app(app)
 
-# --- 5. Register Blueprints and Core Routes ---
+# --- 6. Register Blueprints and Core Routes ---
 
 # CRITICAL: This one line is all that's needed to activate routes.py
 from project import routes 

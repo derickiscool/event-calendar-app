@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Event Calendar — Home{% endblock %}
+
+{% block content %}
+  <!-- Backend Status Banner -->
+  <div id="backend-status" class="backend-status" style="display:none;">
+    <div class="container">
+      <div class="status-content">
+        <span class="status-dot"></span>
+        <span class="status-text">Checking backend...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-home">
+    <div class="container">
+      <section class="hero">
+        <h1>Everything worth lah</h1>
+        <p class="sub">Discover the latest local arts and culture events near you!</p>
+
+        <div class="catbar" id="catbar">
+          <button class="pill active" data-cat="all">All</button>
+          <button class="pill" data-cat="music">Music</button>
+          <button class="pill" data-cat="theatre">Theatre</button>
+          <button class="pill" data-cat="comedy">Comedy</button>
+          <button class="pill" data-cat="film">Film</button>
+          <button class="pill" data-cat="visual-arts">Visual Arts</button>
+          <button class="pill" data-cat="workshops">Workshops</button>
+        </div>
+
+        <div class="search">
+          <input class="input" id="q" type="search" placeholder="Search events, venues, or tags…">
+          <button class="btn btn-primary" id="searchBtn">Search</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="grid grid-3" id="event-list"></div>
+        <div id="empty" class="meta" style="display:none">No events match your filters.</div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const state = { cat:'all', q:'' };
+  let allEvents = [];
+
+  // Check backend health on page load
+  async function checkBackend() {
+    const banner = document.getElementById('backend-status');
+    const statusText = banner.querySelector('.status-text');
+    
+    try {
+      const response = await fetch('/api/health');
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        banner.style.display = 'block';
+        banner.classList.remove('error');
+        banner.classList.add('success');
+        statusText.textContent = '✓ ' + data.message;
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          banner.style.display = 'none';
+        }, 5000);
+      }
+    } catch (error) {
+      banner.style.display = 'block';
+      banner.classList.add('error');
+      statusText.textContent = '✗ Backend connection failed';
+      console.error('Backend error:', error);
+    }
+  }
+
+  async function fetchEvents(){
+    try{
+      const r = await fetch("/api/official-events");
+      if(!r.ok) throw new Error("fetch failed");
+      allEvents = await r.json();
+      renderEvents();
+    }catch(e){
+      console.error(e);
+      document.getElementById('empty').style.display='block';
+      document.getElementById('empty').textContent = 'Error loading events';
+    }
+  }
+
+  function renderEvents(){
+    const filtered = allEvents.filter(ev=>{
+      if(state.cat!=='all' && ev.category!==state.cat) return false;
+      if(state.q){
+        const lq=state.q.toLowerCase();
+        const text=[ev.title||'',ev.description||'',ev.venue||''].join(' ').toLowerCase();
+        if(!text.includes(lq)) return false;
+      }
+      return true;
+    });
+
+    const list = document.getElementById('event-list');
+    const empty = document.getElementById('empty');
+    
+    if(!filtered.length){
+      list.innerHTML='';
+      empty.style.display='block';
+      return;
+    }
+    
+    empty.style.display='none';
+    list.innerHTML = filtered.map(ev=>`
+      <div class="card">
+        <img src="${ev.image||'/static/placeholder.jpg'}" 
+             alt="${ev.title||'Event'}"
+             onerror="this.src='https://via.placeholder.com/400x250/0a0e13/4da3ff?text=Event'">
+        <div class="card-body">
+          ${ev.category?`<span class="badge">${ev.category}</span>`:''}
+          <h3>${ev.title||'Untitled'}</h3>
+          ${ev.date?`<p class="meta">📅 ${ev.date}</p>`:''}
+          ${ev.venue?`<p class="meta">📍 ${ev.venue}</p>`:''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('catbar').addEventListener('click',e=>{
+    if(e.target.classList.contains('pill')){
+      document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+      e.target.classList.add('active');
+      state.cat = e.target.dataset.cat;
+      renderEvents();
+    }
+  });
+
+  document.getElementById('searchBtn').addEventListener('click',()=>{
+    state.q = document.getElementById('q').value;
+    renderEvents();
+  });
+
+  document.getElementById('q').addEventListener('keypress',e=>{
+    if(e.key==='Enter'){
+      state.q = e.target.value;
+      renderEvents();
+    }
+  });
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    checkBackend();
+    fetchEvents();
+  });
+</script>
+{% endblock %}

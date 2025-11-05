@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Edit event — Event Calendar{% endblock %}
+{% block content %}
+<h1>Edit event</h1>
+<form id="event-edit-form">
+  <label>Title <input name="title" /></label>
+  <label>Description <textarea name="description"></textarea></label>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/events.js') }}" defer></script>
+{% endblock %}

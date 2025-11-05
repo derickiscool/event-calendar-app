@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Profile — Event Calendar{% endblock %}
+{% block content %}
+<h1>Your Profile</h1>
+<section id="profile-info">
+  <p>Name: <span id="profile-name">—</span></p>
+  <p>Email: <span id="profile-email">—</span></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+{% endblock %}

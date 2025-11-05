@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Event — Event Calendar{% endblock %}
+{% block content %}
+<a href="{{ url_for('main.index') }}">← Back</a>
+<article id="event-detail">
+  <h1 id="event-title">Event title</h1>
+  <p id="event-desc">Description</p>
+</article>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/events.js') }}" defer></script>
+{% endblock %}
