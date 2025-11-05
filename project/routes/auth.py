@@ -2,40 +2,117 @@
 from flask import Blueprint, request, jsonify, session
 from werkzeug.security import check_password_hash
 from project.models import db, User, UserProfile
+import re
 
 auth_bp = Blueprint("auth", __name__)
 
+def validate_username(username):
+    """Validate username format and length."""
+    if not username or not isinstance(username, str):
+        return "Username is required"
+    username = username.strip()
+    if len(username) < 3:
+        return "Username must be at least 3 characters"
+    if len(username) > 50:
+        return "Username must be less than 50 characters"
+    if not re.match(r'^[a-zA-Z0-9_]+$', username):
+        return "Username can only contain letters, numbers, and underscores"
+    return None
+
+def validate_email(email):
+    """Validate email format and length."""
+    if not email or not isinstance(email, str):
+        return "Email is required"
+    email = email.strip()
+    if len(email) > 255:
+        return "Email must be less than 255 characters"
+    # Basic email regex
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+        return "Please enter a valid email address"
+    return None
+
+def validate_password(password):
+    """Validate password strength."""
+    if not password or not isinstance(password, str):
+        return "Password is required"
+    if len(password) < 8:
+        return "Password must be at least 8 characters"
+    if len(password) > 128:
+        return "Password must be less than 128 characters"
+    if not re.search(r'[a-zA-Z]', password):
+        return "Password must contain at least one letter"
+    if not re.search(r'[0-9]', password):
+        return "Password must contain at least one number"
+    return None
+
+def validate_name(name, field_name):
+    """Validate optional name fields."""
+    if not name:
+        return None  # Optional field
+    if not isinstance(name, str):
+        return f"{field_name} must be text"
+    name = name.strip()
+    if len(name) > 100:
+        return f"{field_name} must be less than 100 characters"
+    if not re.match(r'^[a-zA-Z\s\'-]+$', name):
+        return f"{field_name} can only contain letters, spaces, hyphens, and apostrophes"
+    return None
+
 @auth_bp.route("/auth/register", methods=["POST"])
 def register():
-    """Register a new user account."""
+    """Register a new user account with validation."""
     data = request.get_json()
     
-    # Validation
-    if not data.get("username") or not data.get("email") or not data.get("password_hash"):
-        return jsonify({"error": "Username, email, and password are required"}), 400
+    # Extract and sanitize inputs
+    username = data.get("username", "").strip() if isinstance(data.get("username"), str) else ""
+    email = data.get("email", "").strip().lower() if isinstance(data.get("email"), str) else ""
+    password = data.get("password_hash", "")
+    fname = data.get("fname", "").strip() if isinstance(data.get("fname"), str) else ""
+    lname = data.get("lname", "").strip() if isinstance(data.get("lname"), str) else ""
     
-    # Check if user already exists
-    if User.query.filter_by(email=data["email"]).first():
+    # Validate all fields
+    username_error = validate_username(username)
+    if username_error:
+        return jsonify({"error": username_error}), 400
+    
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"error": email_error}), 400
+    
+    password_error = validate_password(password)
+    if password_error:
+        return jsonify({"error": password_error}), 400
+    
+    fname_error = validate_name(fname, "First name")
+    if fname_error:
+        return jsonify({"error": fname_error}), 400
+    
+    lname_error = validate_name(lname, "Last name")
+    if lname_error:
+        return jsonify({"error": lname_error}), 400
+    
+    # Check if user already exists (case-insensitive for email)
+    if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered"}), 400
     
-    if User.query.filter_by(username=data["username"]).first():
+    if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already taken"}), 400
     
-    # Create new user
+    # Create new user with validated data
     new_user = User(
-        username=data["username"],
-        email=data["email"]
+        username=username,
+        email=email
     )
-    new_user.set_password(data["password_hash"])  # Use the model's set_password method
+    new_user.set_password(password)  # Use the model's set_password method
     
     db.session.add(new_user)
     db.session.commit()
     
-    # Create default profile
+    # Create default profile with validated names
     profile = UserProfile(
         user_id=new_user.id,
-        fname=data.get("fname", ""),
-        lname=data.get("lname", "")
+        fname=fname,
+        lname=lname
     )
     db.session.add(profile)
     db.session.commit()

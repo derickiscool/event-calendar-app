@@ -1,31 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Register — Event Calendar{% endblock %}
 {% block content %}
-<h1>Create an account</h1>
-<form id="register-form" novalidate>
-  <div class="form-group">
-    <label for="register-username">Username</label>
-    <input id="register-username" name="username" type="text" required autocomplete="username">
+<div class="auth-container">
+  <div class="auth-card">
+    <h1>Create an account</h1>
+    <form id="register-form" class="auth-form" novalidate>
+      <div class="form-group">
+        <label for="register-username">Username</label>
+        <input id="register-username" name="username" type="text" required autocomplete="username" 
+               minlength="3" maxlength="50" pattern="[a-zA-Z0-9_]+" 
+               title="Username must be 3-50 characters, letters, numbers, and underscores only">
+        <span class="error-message" id="username-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="register-email">Email</label>
+        <input id="register-email" name="email" type="email" required autocomplete="email" maxlength="255">
+        <span class="error-message" id="email-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="register-fname">First name <span class="optional">(optional)</span></label>
+        <input id="register-fname" name="fname" type="text" autocomplete="given-name" maxlength="100">
+        <span class="error-message" id="fname-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="register-lname">Last name <span class="optional">(optional)</span></label>
+        <input id="register-lname" name="lname" type="text" autocomplete="family-name" maxlength="100">
+        <span class="error-message" id="lname-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="register-password">Password</label>
+        <input id="register-password" name="password_hash" type="password" required autocomplete="new-password" 
+               minlength="8" maxlength="128">
+        <small class="form-hint">Minimum 8 characters, include letters and numbers</small>
+        <span class="error-message" id="password-error"></span>
+      </div>
+      <button type="submit" class="btn-primary">Register</button>
+    </form>
+    <p id="register-feedback" role="status" aria-live="polite"></p>
+    <p class="auth-link">
+      Already have an account? <a href="{{ url_for('main.login') }}">Sign in</a>
+    </p>
   </div>
-  <div class="form-group">
-    <label for="register-email">Email</label>
-    <input id="register-email" name="email" type="email" required autocomplete="email">
-  </div>
-  <div class="form-group">
-    <label for="register-fname">First name <span class="optional">(optional)</span></label>
-    <input id="register-fname" name="fname" type="text" autocomplete="given-name">
-  </div>
-  <div class="form-group">
-    <label for="register-lname">Last name <span class="optional">(optional)</span></label>
-    <input id="register-lname" name="lname" type="text" autocomplete="family-name">
-  </div>
-  <div class="form-group">
-    <label for="register-password">Password</label>
-    <input id="register-password" name="password_hash" type="password" required autocomplete="new-password" minlength="8">
-  </div>
-  <button type="submit">Register</button>
-</form>
-<p id="register-feedback" role="status" aria-live="polite"></p>
+</div>
 {% endblock %}
 {% block scripts %}
 <script type="module" src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
