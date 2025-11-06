@@ -1,12 +1,108 @@
 {% extends "base.html" %}
 {% block title %}Profile — Event Calendar{% endblock %}
 {% block content %}
-<h1>Your Profile</h1>
-<section id="profile-info">
-  <p>Name: <span id="profile-name">—</span></p>
-  <p>Email: <span id="profile-email">—</span></p>
-</section>
+<div class="profile-container">
+  <div class="profile-card">
+    <h1>Your Profile</h1>
+    
+    <!-- Profile Display Mode -->
+    <div id="profile-view" class="profile-view">
+      <div class="profile-header">
+        <img id="avatar-display" src="{{ url_for('static', filename='assets/images/default-avatar.svg') }}" alt="Profile Avatar" class="profile-avatar">
+      </div>
+      
+      <div class="profile-details">
+        <div class="profile-field">
+          <label>Username</label>
+          <span id="username-display">—</span>
+        </div>
+        
+        <div class="profile-field">
+          <label>Email</label>
+          <span id="email-display">—</span>
+        </div>
+        
+        <div class="profile-field">
+          <label>First Name</label>
+          <span id="fname-display">—</span>
+        </div>
+        
+        <div class="profile-field">
+          <label>Last Name</label>
+          <span id="lname-display">—</span>
+        </div>
+        
+        <div class="profile-field">
+          <label>Phone Number</label>
+          <span id="phone-display">—</span>
+        </div>
+        
+        <div class="profile-field">
+          <label>Postal Code</label>
+          <span id="postal-display">—</span>
+        </div>
+      </div>
+      
+      <div class="profile-actions">
+        <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+      </div>
+    </div>
+    
+    <!-- Profile Edit Mode -->
+    <div id="profile-edit" class="profile-edit hidden">
+      <form id="profile-form" class="profile-form" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="avatar-upload">Profile Picture</label>
+          <div class="avatar-upload-container">
+            <div class="avatar-preview">
+              <img id="avatar-preview-img" src="{{ url_for('static', filename='assets/images/default-avatar.svg') }}" alt="Avatar Preview">
+            </div>
+            <div class="avatar-upload-controls">
+              <input id="avatar-upload" name="avatar" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display: none;">
+              <button type="button" id="choose-avatar-btn" class="btn btn-secondary">Choose Image</button>
+              <button type="button" id="remove-avatar-btn" class="btn btn-secondary" style="display: none;">Remove</button>
+            </div>
+          </div>
+          <small class="form-hint">Min: 268×268px, Recommended: 400×400px, Max: 3MB (JPEG, PNG, WebP)</small>
+          <span class="error-message" id="avatar-error"></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="fname">First Name</label>
+          <input id="fname" name="fname" type="text" required maxlength="45">
+          <span class="error-message" id="fname-edit-error"></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="lname">Last Name</label>
+          <input id="lname" name="lname" type="text" maxlength="45">
+          <span class="error-message" id="lname-edit-error"></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input id="phone" name="phone" type="tel" maxlength="16" placeholder="+65 1234 5678">
+          <small class="form-hint">Optional</small>
+          <span class="error-message" id="phone-error"></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="postal-code">Postal Code</label>
+          <input id="postal-code" name="postal_code" type="text" maxlength="6" placeholder="123456">
+          <small class="form-hint">Optional (6 digits)</small>
+          <span class="error-message" id="postal-error"></span>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Save Changes</button>
+          <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+      <p id="profile-feedback" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
 {% endblock %}
 {% block scripts %}
-<script type="module" src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+<script type="module" src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
 {% endblock %}
