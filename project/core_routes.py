@@ -34,6 +34,11 @@ def event_edit():
     """Render the edit event page."""
     return render_template('event-edit.html')
 
+@main_bp.route("/manage-events")
+def manage_events():
+    """Render the manage events page."""
+    return render_template('manage-events.html')
+
 @main_bp.route("/event-detail")
 def event_detail():
     """Render the event detail page."""

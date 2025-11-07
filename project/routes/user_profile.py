@@ -2,6 +2,7 @@
 from flask import Blueprint, request, jsonify
 from project.models import db, UserProfile
 import os
+import re
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
@@ -155,11 +156,11 @@ def update_my_profile():
     if lname and not re.match(r'^[a-zA-Z\s\'-]+$', lname):
         return jsonify({"error": "Last name can only contain letters, spaces, hyphens, and apostrophes"}), 400
     
-    # Validate phone (optional)
-    if phone and len(phone) > 16:
-        return jsonify({"error": "Phone number must be less than 16 characters"}), 400
-    if phone and not re.match(r'^[\d\s\+\-\(\)]+$', phone):
-        return jsonify({"error": "Phone number can only contain digits, spaces, and + - ( )"}), 400
+    # Validate phone (optional) - Singapore format: 8 digits only
+    if phone and len(phone) != 8:
+        return jsonify({"error": "Phone number must be exactly 8 digits"}), 400
+    if phone and not re.match(r'^\d{8}$', phone):
+        return jsonify({"error": "Phone number must be 8 digits only (no spaces or symbols)"}), 400
     
     # Validate postal code (optional)
     if postal_code and len(postal_code) != 6:

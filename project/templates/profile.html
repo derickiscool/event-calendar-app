@@ -81,8 +81,11 @@
         
         <div class="form-group">
           <label for="phone">Phone Number</label>
-          <input id="phone" name="phone" type="tel" maxlength="16" placeholder="+65 1234 5678">
-          <small class="form-hint">Optional</small>
+          <div class="phone-input-container">
+            <span class="phone-prefix">+65</span>
+            <input id="phone" name="phone" type="tel" maxlength="8" pattern="\d{8}" placeholder="12345678">
+          </div>
+          <small class="form-hint">Optional: 8 digits only</small>
           <span class="error-message" id="phone-error"></span>
         </div>
         

@@ -40,7 +40,7 @@ function displayProfile(data) {
   // Display profile info
   document.getElementById('fname-display').textContent = profile.fname || '—';
   document.getElementById('lname-display').textContent = profile.lname || '—';
-  document.getElementById('phone-display').textContent = profile.phone || '—';
+  document.getElementById('phone-display').textContent = profile.phone ? `+65 ${profile.phone}` : '—';
   document.getElementById('postal-display').textContent = profile.postal_code || '—';
   
   // Display avatar
@@ -115,9 +115,9 @@ function validateName(name, fieldName, required = false) {
 
 function validatePhone(phone) {
   if (!phone) return null; // Optional
-  if (phone.length > 16) return 'Phone number must be less than 16 characters';
-  if (!/^[\d\s+\-()]+$/.test(phone)) {
-    return 'Phone number can only contain digits, spaces, and + - ( )';
+  if (phone.length !== 8) return 'Phone number must be exactly 8 digits';
+  if (!/^\d{8}$/.test(phone)) {
+    return 'Phone number must be 8 digits only (no spaces or symbols)';
   }
   return null;
 }

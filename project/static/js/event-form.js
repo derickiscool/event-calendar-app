@@ -368,7 +368,7 @@ async function deleteEvent(eventId) {
     if (res.ok) {
       showFeedback('Event deleted successfully!', 'success');
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = '/manage-events';
       }, 1500);
     } else {
       const data = await res.json();
@@ -593,9 +593,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const action = isEditMode ? 'updated' : 'created';
         showFeedback(`Event ${action} successfully!`, 'success');
         
-        // Redirect to home after delay
+        // Redirect to manage events after delay
         setTimeout(() => {
-          window.location.href = '/';
+          window.location.href = '/manage-events';
         }, 1500);
       } else {
         showFeedback(result.error || `Failed to ${isEditMode ? 'update' : 'create'} event`, 'error');

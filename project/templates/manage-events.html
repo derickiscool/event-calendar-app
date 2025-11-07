@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Manage Events — Event Calendar{% endblock %}
+{% block content %}
+<div class="manage-events-container">
+  <div class="manage-events-header">
+    <h1>Manage Your Events</h1>
+    <a href="{{ url_for('main.event_new') }}" class="btn btn-primary">Create New Event</a>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loading" class="loading-state">
+    <p>Loading your events...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div id="empty-state" class="empty-state hidden">
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="30" y="25" width="60" height="70" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+      <rect x="30" y="25" width="60" height="15" fill="currentColor" opacity="0.3"/>
+      <circle cx="45" cy="20" r="2" fill="currentColor"/>
+      <circle cx="75" cy="20" r="2" fill="currentColor"/>
+      <line x1="40" y1="50" x2="80" y2="50" stroke="currentColor" stroke-width="2"/>
+      <line x1="40" y1="60" x2="70" y2="60" stroke="currentColor" stroke-width="2"/>
+      <line x1="40" y1="70" x2="75" y2="70" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <h2>No Events Yet</h2>
+    <p>You haven't created any events. Start by creating your first event!</p>
+    <a href="{{ url_for('main.event_new') }}" class="btn btn-primary">Create Your First Event</a>
+  </div>
+
+  <!-- Events List -->
+  <div id="events-list" class="events-list hidden"></div>
+
+  <!-- Error State -->
+  <div id="error-state" class="error-state hidden">
+    <p id="error-message"></p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/manage-events.js') }}" defer></script>
+{% endblock %}

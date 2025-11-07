@@ -91,6 +91,19 @@ def get_events():
     events = Event.query.all()
     return jsonify([e.as_dict() for e in events])
 
+# GET user's own events
+@event_bp.route("/events/my-events", methods=["GET"])
+def get_my_events():
+    from flask import session
+    
+    # Check authentication
+    if "user_id" not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    # Get events created by this user, ordered by start date descending
+    events = Event.query.filter_by(user_id=session["user_id"]).order_by(Event.start_datetime.desc()).all()
+    return jsonify([e.as_dict() for e in events])
+
 # GET single event
 @event_bp.route("/events/<int:event_id>", methods=["GET"])
 def get_event(event_id):
