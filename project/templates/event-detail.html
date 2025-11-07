@@ -1,12 +1,408 @@
 {% extends "base.html" %}
-{% block title %}Event — Event Calendar{% endblock %}
+{% block title %}Event Details — Event Calendar{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('main.index') }}">← Back</a>
-<article id="event-detail">
-  <h1 id="event-title">Event title</h1>
-  <p id="event-desc">Description</p>
-</article>
+<div class="page-event-detail">
+  <div class="container">
+    <!-- Loading State -->
+    <div id="loading" class="loading-state">
+      <p>Loading event details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="error-state" style="display: none;">
+      <p id="error-message">Event not found</p>
+      <a href="/" class="btn btn-primary">← Back to Events</a>
+    </div>
+
+    <!-- Event Detail Content -->
+    <article id="event-detail" style="display: none;">
+      <div class="event-header">
+        <a href="/" class="back-link">← Back to Events</a>
+        <div class="event-badges" id="event-badges"></div>
+      </div>
+
+      <div class="event-image-container">
+        <img id="event-image" src="" alt="" class="event-detail-image">
+      </div>
+
+      <div class="event-content">
+        <h1 id="event-title" class="event-detail-title">Event Title</h1>
+        
+        <div class="event-meta-grid">
+          <div class="meta-item">
+            <span class="meta-icon">📅</span>
+            <div class="meta-content">
+              <strong>Date</strong>
+              <p id="event-date">Date TBA</p>
+            </div>
+          </div>
+          
+          <div class="meta-item">
+            <span class="meta-icon">📍</span>
+            <div class="meta-content">
+              <strong>Venue</strong>
+              <p id="event-venue">Venue TBA</p>
+            </div>
+          </div>
+          
+          <div class="meta-item" id="location-item" style="display: none;">
+            <span class="meta-icon">🗺️</span>
+            <div class="meta-content">
+              <strong>Address</strong>
+              <p id="event-location">Address</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="event-description-section">
+          <h2>About This Event</h2>
+          <div id="event-description" class="event-description">
+            <p>Event description will appear here...</p>
+          </div>
+        </div>
+
+        <div class="event-actions" id="event-actions" style="display: none;">
+          <a id="registration-link" href="#" target="_blank" class="btn btn-primary">Register Now</a>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="reviews-section">
+          <h2>Reviews & Ratings</h2>
+          
+          <!-- Reviews Summary -->
+          <div id="reviews-summary" class="reviews-summary" style="display: none;">
+            <div class="average-rating">
+              <span id="avg-rating" class="rating-number">0.0</span>
+              <div class="stars" id="avg-stars"></div>
+              <span id="review-count" class="review-count">0 reviews</span>
+            </div>
+          </div>
+
+          <!-- Submit Review Form -->
+          <div class="review-form-container">
+            <h3>Write a Review</h3>
+            <form id="review-form" class="review-form">
+              <div class="form-group">
+                <label for="review-rating">Rating *</label>
+                <div class="star-rating-input">
+                  <input type="radio" id="star5" name="rating" value="5" required>
+                  <label for="star5" title="5 stars">★</label>
+                  <input type="radio" id="star4" name="rating" value="4">
+                  <label for="star4" title="4 stars">★</label>
+                  <input type="radio" id="star3" name="rating" value="3">
+                  <label for="star3" title="3 stars">★</label>
+                  <input type="radio" id="star2" name="rating" value="2">
+                  <label for="star2" title="2 stars">★</label>
+                  <input type="radio" id="star1" name="rating" value="1">
+                  <label for="star1" title="1 star">★</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="review-title">Review Title *</label>
+                <input type="text" id="review-title" name="title" placeholder="Summarize your experience" required maxlength="255">
+              </div>
+
+              <div class="form-group">
+                <label for="review-comment">Your Review *</label>
+                <textarea id="review-comment" name="comment" rows="4" placeholder="Share your experience with this event..." required></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+              </div>
+            </form>
+            <div id="review-message" class="review-message" style="display: none;"></div>
+          </div>
+
+          <!-- Existing Reviews List -->
+          <div class="reviews-list">
+            <h3>Reviews</h3>
+            <div id="reviews-container" class="reviews-container">
+              <p class="no-reviews">No reviews yet. Be the first to review!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
 {% endblock %}
+
 {% block scripts %}
-<script type="module" src="{{ url_for('static', filename='js/events.js') }}" defer></script>
+<script type="module">
+  const API_BASE = window.API_BASE || '/api';
+
+  // Get event ID from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const eventId = urlParams.get('id');
+
+  const loading = document.getElementById('loading');
+  const error = document.getElementById('error');
+  const eventDetail = document.getElementById('event-detail');
+
+  if (!eventId) {
+    showError('No event ID provided');
+  } else {
+    loadEventDetails(eventId);
+  }
+
+  async function loadEventDetails(id) {
+    try {
+      const response = await fetch(`${API_BASE}/event/${encodeURIComponent(id)}`);
+      
+      if (!response.ok) {
+        throw new Error('Event not found');
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.event) {
+        displayEvent(data.event);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err) {
+      console.error('Error loading event:', err);
+      showError(err.message || 'Failed to load event details');
+    }
+  }
+
+  function displayEvent(event) {
+    // Hide loading, show content
+    loading.style.display = 'none';
+    eventDetail.style.display = 'block';
+
+    // Set title and meta tags
+    document.title = `${event.title} — Event Calendar`;
+    
+    // Event title
+    document.getElementById('event-title').textContent = event.title;
+
+    // Event image
+    const imgEl = document.getElementById('event-image');
+    imgEl.src = event.image || 'https://via.placeholder.com/1200x600/0a0e13/4da3ff?text=Event';
+    imgEl.alt = event.title;
+
+    // Badges
+    const badgesContainer = document.getElementById('event-badges');
+    let badges = [];
+    
+    if (event.category && event.category !== 'other') {
+      badges.push(`<span class="badge badge-${event.category}">${formatCategory(event.category)}</span>`);
+    }
+    
+    badges.push(`<span class="badge badge-${event.source}">${event.source === 'official' ? '🏛️ Official' : '👥 Community'}</span>`);
+    badgesContainer.innerHTML = badges.join('');
+
+    // Date
+    document.getElementById('event-date').textContent = event.date || 'Date TBA';
+
+    // Venue
+    document.getElementById('event-venue').textContent = event.venue || 'Venue TBA';
+
+    // Location (address)
+    if (event.location) {
+      document.getElementById('location-item').style.display = 'flex';
+      document.getElementById('event-location').textContent = event.location;
+    }
+
+    // Description
+    const descEl = document.getElementById('event-description');
+    if (event.description) {
+      // Convert line breaks to paragraphs
+      const paragraphs = event.description.split('\n').filter(p => p.trim());
+      descEl.innerHTML = paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+    } else {
+      descEl.innerHTML = '<p><em>No description available</em></p>';
+    }
+
+    // Registration link
+    if (event.registration_link) {
+      document.getElementById('event-actions').style.display = 'block';
+      document.getElementById('registration-link').href = event.registration_link;
+    }
+  }
+
+  function showError(message) {
+    loading.style.display = 'none';
+    error.style.display = 'block';
+    document.getElementById('error-message').textContent = message;
+  }
+
+  function formatCategory(category) {
+    const categories = {
+      'music': 'Music',
+      'theatre': 'Theatre',
+      'comedy': 'Comedy',
+      'film': 'Film',
+      'visual-arts': 'Visual Arts',
+      'workshops': 'Workshops',
+      'other': 'Other'
+    };
+    return categories[category] || category;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ===== REVIEWS FUNCTIONALITY =====
+
+  // Load reviews for the event
+  async function loadReviews(eventId) {
+    try {
+      const response = await fetch(`${API_BASE}/reviews?event_id=${encodeURIComponent(eventId)}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load reviews');
+      }
+
+      const reviews = await response.json();
+      displayReviews(reviews);
+      updateReviewsSummary(reviews);
+    } catch (err) {
+      console.error('Error loading reviews:', err);
+    }
+  }
+
+  // Display reviews in the list
+  function displayReviews(reviews) {
+    const container = document.getElementById('reviews-container');
+    
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to review!</p>';
+      return;
+    }
+
+    container.innerHTML = reviews.map(review => `
+      <div class="review-card">
+        <div class="review-header">
+          <div class="review-author">
+            <strong>${escapeHtml(review.user_name || 'Anonymous')}</strong>
+            <span class="review-date">${formatDate(review.created_at)}</span>
+          </div>
+          <div class="review-rating">
+            ${generateStars(review.rating)}
+          </div>
+        </div>
+        ${review.title ? `<h4 class="review-title">${escapeHtml(review.title)}</h4>` : ''}
+        <div class="review-body">
+          <p>${escapeHtml(review.comment)}</p>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Update reviews summary (average rating)
+  function updateReviewsSummary(reviews) {
+    if (!reviews || reviews.length === 0) return;
+
+    const summaryEl = document.getElementById('reviews-summary');
+    const avgRatingEl = document.getElementById('avg-rating');
+    const avgStarsEl = document.getElementById('avg-stars');
+    const reviewCountEl = document.getElementById('review-count');
+
+    const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    
+    summaryEl.style.display = 'block';
+    avgRatingEl.textContent = avgRating.toFixed(1);
+    avgStarsEl.innerHTML = generateStars(avgRating);
+    reviewCountEl.textContent = `${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`;
+  }
+
+  // Generate star HTML
+  function generateStars(rating) {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    let html = '';
+    for (let i = 0; i < fullStars; i++) html += '<span class="star filled">★</span>';
+    if (hasHalfStar) html += '<span class="star half">★</span>';
+    for (let i = 0; i < emptyStars; i++) html += '<span class="star empty">☆</span>';
+    
+    return html;
+  }
+
+  // Format date
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    
+    return date.toLocaleDateString();
+  }
+
+  // Handle review form submission
+  document.getElementById('review-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const rating = document.querySelector('input[name="rating"]:checked');
+    const title = document.getElementById('review-title').value;
+    const comment = document.getElementById('review-comment').value;
+    const messageEl = document.getElementById('review-message');
+
+    if (!rating) {
+      showReviewMessage('Please select a rating', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          event_id: eventId,
+          rating: parseInt(rating.value),
+          title: title.trim(),
+          comment: comment.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showReviewMessage('Review submitted successfully!', 'success');
+        document.getElementById('review-form').reset();
+        // Reload reviews
+        setTimeout(() => {
+          loadReviews(eventId);
+          messageEl.style.display = 'none';
+        }, 2000);
+      } else {
+        showReviewMessage(data.error || 'Failed to submit review', 'error');
+      }
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      showReviewMessage('Failed to submit review. Please try again.', 'error');
+    }
+  });
+
+  // Show review submission message
+  function showReviewMessage(message, type) {
+    const messageEl = document.getElementById('review-message');
+    messageEl.textContent = message;
+    messageEl.className = `review-message ${type}`;
+    messageEl.style.display = 'block';
+  }
+
+  // Load reviews when event is loaded
+  if (eventId) {
+    loadReviews(eventId);
+  }
+</script>
 {% endblock %}

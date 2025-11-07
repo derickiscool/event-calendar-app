@@ -218,6 +218,112 @@ def get_all_events():
     }), 200
 
 
+@api_bp.route('/event/<event_id>', methods=['GET'])
+def get_single_event(event_id):
+    """
+    Get a single event by ID.
+    ID format: 'official_{mongodb_id}' or 'community_{mariadb_id}'
+    """
+    try:
+        # Parse event ID
+        if event_id.startswith('official_'):
+            # Fetch from MongoDB
+            mongo_id = event_id.replace('official_', '')
+            
+            client = get_mongo_client()
+            if not client:
+                return jsonify({'error': 'Database connection failed'}), 500
+            
+            db = client.get_database("event_calendar")
+            events_collection = db.events
+            
+            event = events_collection.find_one({'_id': ObjectId(mongo_id)})
+            client.close()
+            
+            if not event:
+                return jsonify({'error': 'Event not found'}), 404
+            
+            # Transform to unified format
+            unified_event = {
+                'id': event_id,
+                'title': event.get('title', 'Untitled Event'),
+                'description': event.get('description', ''),
+                'start_date': event.get('start_date', ''),
+                'end_date': event.get('end_date', ''),
+                'date': event.get('start_date', 'Date TBA'),
+                'venue': event.get('venue_name', 'Venue TBA'),
+                'location': event.get('address', ''),
+                'image': event.get('image_url', ''),
+                'category': _categorize_event(event.get('title', '') + ' ' + event.get('description', '')),
+                'source': 'official',
+                'source_label': 'Official Event',
+                'registration_link': event.get('registration_link', ''),
+                'external_source': event.get('source', '')
+            }
+            
+            return jsonify({
+                'status': 'success',
+                'event': unified_event
+            }), 200
+            
+        elif event_id.startswith('community_'):
+            # Fetch from MariaDB
+            from .models import db, Event, Venue, EventTag, Tag
+            
+            mariadb_id = int(event_id.replace('community_', ''))
+            event = Event.query.get(mariadb_id)
+            
+            if not event:
+                return jsonify({'error': 'Event not found'}), 404
+            
+            # Get venue details
+            venue = Venue.query.get(event.venue_id) if event.venue_id else None
+            venue_name = venue.name if venue else 'Venue TBA'
+            venue_address = venue.address if venue else ''
+            
+            # Get tags/categories
+            tags = []
+            if event.tags:
+                for et in event.tags:
+                    tag = Tag.query.get(et.tag_id)
+                    if tag:
+                        tags.append(tag.tag_name)
+            
+            event_category = tags[0] if tags else 'other'
+            
+            # Get creator info
+            creator_name = event.creator.username if event.creator else 'Anonymous'
+            
+            unified_event = {
+                'id': event_id,
+                'title': event.title,
+                'description': event.description or '',
+                'start_date': event.start_datetime.isoformat() if event.start_datetime else '',
+                'end_date': event.end_datetime.isoformat() if event.end_datetime else '',
+                'date': event.start_datetime.strftime('%Y-%m-%d %H:%M') if event.start_datetime else 'Date TBA',
+                'venue': venue_name,
+                'location': venue_address or event.location or '',
+                'image': event.image_url or '',
+                'category': _map_tag_to_category(event_category),
+                'source': 'community',
+                'source_label': f'Community Event by {creator_name}',
+                'tags': tags,
+                'creator_id': event.user_id
+            }
+            
+            return jsonify({
+                'status': 'success',
+                'event': unified_event
+            }), 200
+            
+        else:
+            return jsonify({'error': 'Invalid event ID format'}), 400
+            
+    except Exception as e:
+        print(f"Error fetching event {event_id}: {e}")
+        return jsonify({'error': 'Failed to fetch event'}), 500
+
+
 def _categorize_event(text):
     """
     Categorize event based on keywords in title/description.
@@ -261,3 +367,117 @@ def _map_tag_to_category(tag_name):
     }
     
     return mapping.get(tag_lower, 'other')
+
+
+@api_bp.route('/reviews', methods=['GET'])
+def get_reviews():
+    """
+    Get reviews for an event.
+    Query parameter: event_id (format: official_xxx or community_xxx)
+    """
+    try:
+        from .models import db, Review, User
+        
+        event_id = request.args.get('event_id')
+        if not event_id:
+            return jsonify({'error': 'Event ID is required'}), 400
+        
+        # Query reviews by event_identifier for both official and community events
+        reviews = Review.query.filter_by(event_identifier=event_id).order_by(Review.created_at.desc()).all()
+        
+        reviews_data = []
+        for review in reviews:
+            user = User.query.get(review.user_id) if review.user_id else None
+            reviews_data.append({
+                'id': review.id,
+                'event_id': event_id,  # Return the full event_id format
+                'user_id': review.user_id,
+                'user_name': user.username if user else 'Anonymous',
+                'rating': review.score,  # Map score to rating
+                'title': review.title or '',  # Include review title
+                'comment': review.body or '',  # Map body to comment
+                'created_at': review.created_at.isoformat() if review.created_at else None
+            })
+        
+        return jsonify(reviews_data), 200
+        
+    except Exception as e:
+        print(f"Error fetching reviews: {e}")
+        return jsonify({'error': 'Failed to fetch reviews'}), 500
+
+
+@api_bp.route('/reviews', methods=['POST'])
+def create_review():
+    """
+    Create a new review for an event (official or community).
+    Requires: event_id, rating, title, comment in JSON body
+    """
+    try:
+        from .models import db, Review
+        from flask import session
+        from datetime import datetime
+        
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data:
+            return jsonify({'error': 'Request body is required'}), 400
+        
+        event_id = data.get('event_id')
+        rating = data.get('rating')
+        title = data.get('title')
+        comment = data.get('comment')
+        
+        if not event_id:
+            return jsonify({'error': 'Event ID is required'}), 400
+        
+        # Validate event_id format
+        if not (event_id.startswith('official_') or event_id.startswith('community_')):
+            return jsonify({'error': 'Invalid event ID format'}), 400
+        
+        if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+        
+        if not title or not title.strip():
+            return jsonify({'error': 'Review title is required'}), 400
+        
+        if not comment or not comment.strip():
+            return jsonify({'error': 'Comment is required'}), 400
+        
+        # Get user_id from session (if logged in)
+        user_id = session.get('user_id')
+        
+        # Require login for reviews
+        if not user_id:
+            return jsonify({'error': 'You must be logged in to submit a review'}), 401
+        
+        # For community events, extract numeric ID for the foreign key
+        numeric_event_id = None
+        if event_id.startswith('community_'):
+            numeric_event_id = int(event_id.replace('community_', ''))
+        
+        # Create new review
+        new_review = Review(
+            event_id=numeric_event_id,  # NULL for official events, numeric ID for community events
+            event_identifier=event_id,  # Store full event_id (official_xxx or community_xxx)
+            user_id=user_id,
+            score=rating,  # Map rating to score
+            title=title.strip(),  # Add review title
+            body=comment.strip(),  # Map comment to body
+            created_at=datetime.now()
+        )
+        
+        db.session.add(new_review)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Review submitted successfully',
+            'review_id': new_review.id
+        }), 201
+        
+    except Exception as e:
+        print(f"Error creating review: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to submit review'}), 500
+
