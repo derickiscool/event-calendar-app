@@ -2,68 +2,90 @@
 {% block title %}Event Calendar — Home{% endblock %}
 
 {% block content %}
-  <!-- Backend Status Banner -->
-  <div id="backend-status" class="backend-status" style="display:none;">
-    <div class="container">
-      <div class="status-content">
-        <span class="status-dot"></span>
-        <span class="status-text">Checking backend...</span>
-      </div>
+<!-- Backend Status Banner -->
+<div id="backend-status" class="backend-status" style="display:none;">
+  <div class="container">
+    <div class="status-content">
+      <span class="status-dot"></span>
+      <span class="status-text">Checking backend...</span>
     </div>
   </div>
+</div>
 
-  <div class="page-home">
-    <div class="container">
-      <section class="hero">
-        <h1>Everything worth lah</h1>
-        <p class="sub">Discover the latest local arts and culture events near you!</p>
+<div class="page-home">
+  <div class="container">
+    <section class="hero">
+      <h1>Everything worth lah</h1>
+      <p class="sub">Discover the latest local arts and culture events near you!</p>
 
-        <div class="catbar" id="catbar">
-          <button class="pill active" data-cat="all">All</button>
-          <button class="pill" data-cat="music">Music</button>
-          <button class="pill" data-cat="theatre">Theatre</button>
-          <button class="pill" data-cat="comedy">Comedy</button>
-          <button class="pill" data-cat="film">Film</button>
-          <button class="pill" data-cat="visual-arts">Visual Arts</button>
-          <button class="pill" data-cat="workshops">Workshops</button>
-        </div>
+      <!-- Event Statistics -->
+      <div id="event-stats" class="event-stats"></div>
 
-        <div class="search">
-          <input class="input" id="q" type="search" placeholder="Search events, venues, or tags…">
-          <button class="btn btn-primary" id="searchBtn">Search</button>
-        </div>
-      </section>
-    </div>
+      <div class="catbar" id="catbar">
+        <button class="pill active" data-cat="all">All</button>
+        <button class="pill" data-cat="music">Music</button>
+        <button class="pill" data-cat="theatre">Theatre</button>
+        <button class="pill" data-cat="comedy">Comedy</button>
+        <button class="pill" data-cat="film">Film</button>
+        <button class="pill" data-cat="visual-arts">Visual Arts</button>
+        <button class="pill" data-cat="workshops">Workshops</button>
+      </div>
 
-    <section class="section">
-      <div class="container">
-        <div class="grid grid-3" id="event-list"></div>
-        <div id="empty" class="meta" style="display:none">No events match your filters.</div>
+      <div class="search">
+        <input class="input" id="q" type="search" placeholder="Search events, venues, or tags…">
+        <button class="btn btn-primary" id="searchBtn">Search</button>
       </div>
     </section>
   </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="grid grid-3" id="event-list"></div>
+      <div id="empty" class="meta" style="display:none">No events match your filters.</div>
+
+      <!-- Pagination Controls -->
+      <div id="pagination" class="pagination" style="display:none;">
+        <button id="prevBtn" class="btn btn-secondary">← Previous</button>
+        <div class="pagination-info">
+          <span id="pageInfo">Page 1 of 1</span>
+          <span id="itemInfo" class="item-count"></span>
+        </div>
+        <button id="nextBtn" class="btn btn-secondary">Next →</button>
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-  const state = { cat:'all', q:'' };
-  let allEvents = [];
+<script type="module">
+  import { fetchAllEvents, renderEvents, getEventStats } from '/static/js/events.js';
+
+  const state = {
+    cat: 'all',
+    q: '',
+    allEvents: [],
+    filteredEvents: [],
+    loading: false,
+    currentPage: 1,
+    eventsPerPage: 12 // Show 12 events per page (4 rows of 3)
+  };
 
   // Check backend health on page load
   async function checkBackend() {
     const banner = document.getElementById('backend-status');
     const statusText = banner.querySelector('.status-text');
-    
+
     try {
       const response = await fetch('/api/health');
       const data = await response.json();
-      
+
       if (data.status === 'success') {
         banner.style.display = 'block';
         banner.classList.remove('error');
         banner.classList.add('success');
         statusText.textContent = '✓ ' + data.message;
-        
+
         // Auto-hide after 5 seconds
         setTimeout(() => {
           banner.style.display = 'none';
@@ -77,77 +99,173 @@
     }
   }
 
-  async function fetchEvents(){
-    try{
-      const r = await fetch("/api/official-events");
-      if(!r.ok) throw new Error("fetch failed");
-      allEvents = await r.json();
-      renderEvents();
-    }catch(e){
-      console.error(e);
-      document.getElementById('empty').style.display='block';
-      document.getElementById('empty').textContent = 'Error loading events';
-    }
-  }
+  async function fetchEvents() {
+    if (state.loading) return;
 
-  function renderEvents(){
-    const filtered = allEvents.filter(ev=>{
-      if(state.cat!=='all' && ev.category!==state.cat) return false;
-      if(state.q){
-        const lq=state.q.toLowerCase();
-        const text=[ev.title||'',ev.description||'',ev.venue||''].join(' ').toLowerCase();
-        if(!text.includes(lq)) return false;
-      }
-      return true;
-    });
-
+    state.loading = true;
     const list = document.getElementById('event-list');
     const empty = document.getElementById('empty');
-    
-    if(!filtered.length){
-      list.innerHTML='';
-      empty.style.display='block';
-      return;
+
+    // Show loading state
+    list.innerHTML = '<div class="loading">Loading events...</div>';
+    empty.style.display = 'none';
+    hidePagination();
+
+    try {
+      const response = await fetchAllEvents(state.cat, state.q);
+
+      if (response.status === 'success') {
+        state.allEvents = response.events;
+        state.filteredEvents = response.events;
+        state.currentPage = 1; // Reset to first page
+
+        // Update stats display if exists
+        updateStats(response);
+
+        // Render events with pagination
+        renderCurrentPage();
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      empty.textContent = 'Error loading events. Please try again later.';
+      hidePagination();
+    } finally {
+      state.loading = false;
     }
-    
-    empty.style.display='none';
-    list.innerHTML = filtered.map(ev=>`
-      <div class="card">
-        <img src="${ev.image||'/static/placeholder.jpg'}" 
-             alt="${ev.title||'Event'}"
-             onerror="this.src='https://via.placeholder.com/400x250/0a0e13/4da3ff?text=Event'">
-        <div class="card-body">
-          ${ev.category?`<span class="badge">${ev.category}</span>`:''}
-          <h3>${ev.title||'Untitled'}</h3>
-          ${ev.date?`<p class="meta">📅 ${ev.date}</p>`:''}
-          ${ev.venue?`<p class="meta">📍 ${ev.venue}</p>`:''}
-        </div>
-      </div>
-    `).join('');
   }
 
-  document.getElementById('catbar').addEventListener('click',e=>{
-    if(e.target.classList.contains('pill')){
-      document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  function renderCurrentPage() {
+    const list = document.getElementById('event-list');
+    const empty = document.getElementById('empty');
+
+    if (state.filteredEvents.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      empty.textContent = state.q
+        ? `No events found matching "${state.q}"`
+        : 'No events match your filters.';
+      hidePagination();
+      return;
+    }
+
+    // Calculate pagination
+    const totalPages = Math.ceil(state.filteredEvents.length / state.eventsPerPage);
+    const startIndex = (state.currentPage - 1) * state.eventsPerPage;
+    const endIndex = startIndex + state.eventsPerPage;
+    const eventsToDisplay = state.filteredEvents.slice(startIndex, endIndex);
+
+    // Render events for current page
+    renderEvents(eventsToDisplay, list);
+    empty.style.display = 'none';
+
+    // Update pagination controls
+    updatePagination(totalPages, startIndex, endIndex);
+
+    // Scroll to top of event list
+    document.getElementById('event-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function updatePagination(totalPages, startIndex, endIndex) {
+    const pagination = document.getElementById('pagination');
+    const pageInfo = document.getElementById('pageInfo');
+    const itemInfo = document.getElementById('itemInfo');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    if (totalPages <= 1) {
+      hidePagination();
+      return;
+    }
+
+    // Show pagination
+    pagination.style.display = 'flex';
+
+    // Update page info
+    pageInfo.textContent = `Page ${state.currentPage} of ${totalPages}`;
+    itemInfo.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, state.filteredEvents.length)} of ${state.filteredEvents.length} events`;
+
+    // Update button states
+    prevBtn.disabled = state.currentPage === 1;
+    nextBtn.disabled = state.currentPage === totalPages;
+  }
+
+  function hidePagination() {
+    const pagination = document.getElementById('pagination');
+    pagination.style.display = 'none';
+  }
+
+  function goToPage(page) {
+    const totalPages = Math.ceil(state.filteredEvents.length / state.eventsPerPage);
+    if (page < 1 || page > totalPages) return;
+
+    state.currentPage = page;
+    renderCurrentPage();
+  }
+
+  function updateStats(response) {
+    // Update the page with event statistics
+    const statsElement = document.getElementById('event-stats');
+    if (statsElement) {
+      statsElement.innerHTML = `
+        <span class="stat">Total: ${response.total}</span>
+        <span class="stat">Official: ${response.official_count}</span>
+        <span class="stat">Community: ${response.community_count}</span>
+      `;
+    }
+  }
+
+  // Category filter handler
+  document.getElementById('catbar').addEventListener('click', e => {
+    if (e.target.classList.contains('pill')) {
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
       e.target.classList.add('active');
       state.cat = e.target.dataset.cat;
-      renderEvents();
+      fetchEvents();
     }
   });
 
-  document.getElementById('searchBtn').addEventListener('click',()=>{
-    state.q = document.getElementById('q').value;
-    renderEvents();
+  // Search button handler
+  document.getElementById('searchBtn').addEventListener('click', () => {
+    state.q = document.getElementById('q').value.trim();
+    fetchEvents();
   });
 
-  document.getElementById('q').addEventListener('keypress',e=>{
-    if(e.key==='Enter'){
-      state.q = e.target.value;
-      renderEvents();
+  // Search on Enter key
+  document.getElementById('q').addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+      state.q = e.target.value.trim();
+      fetchEvents();
     }
   });
 
-  // Initialize
+  // Pagination button handlers
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    goToPage(state.currentPage - 1);
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    goToPage(state.currentPage + 1);
+  });
+
+  // Keyboard navigation for pagination (Arrow keys)
+  document.addEventListener('keydown', (e) => {
+    // Only handle arrow keys if not typing in input field
+    if (document.activeElement.tagName === 'INPUT') return;
+
+    const totalPages = Math.ceil(state.filteredEvents.length / state.eventsPerPage);
+
+    if (e.key === 'ArrowLeft' && state.currentPage > 1) {
+      e.preventDefault();
+      goToPage(state.currentPage - 1);
+    } else if (e.key === 'ArrowRight' && state.currentPage < totalPages) {
+      e.preventDefault();
+      goToPage(state.currentPage + 1);
+    }
+  });
+
+  // Initialize on page load
   document.addEventListener('DOMContentLoaded', () => {
     checkBackend();
     fetchEvents();
