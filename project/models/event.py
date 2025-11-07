@@ -27,5 +27,6 @@ class Event(db.Model):
             "end_datetime": self.end_datetime.isoformat() if self.end_datetime else None,
             "location": self.location,
             "image_url": self.image_url,
-            "venue_id": self.venue_id
+            "venue_id": self.venue_id,
+            "venue": self.venue.as_dict() if self.venue else None
         }
