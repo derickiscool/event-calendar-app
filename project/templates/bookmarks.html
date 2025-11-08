@@ -290,14 +290,14 @@
       const dateStr = event.date || event.start_date || 'Date TBA';
       const location = event.venue || event.location || 'Location TBA';
       const title = event.title || 'Untitled Event';
-      const imageUrl = event.image || event.image_url || '/static/assets/images/event-placeholder.jpg';
+      const imageUrl = event.image || event.image_url || '/static/assets/images/default-event.svg';
 
       return `
         <div class="bookmark-card">
           <img src="${imageUrl}" 
                alt="${escapeHtml(title)}" 
                class="bookmark-card-image"
-               onerror="this.src='/static/assets/images/event-placeholder.jpg'">
+               onerror="this.src='/static/assets/images/default-event.svg'">
           <div class="bookmark-card-content">
             <div class="bookmark-card-type ${eventType}">
               ${eventType === 'official' ? '⭐ Official' : '👥 Community'}

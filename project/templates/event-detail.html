@@ -186,8 +186,11 @@
 
     // Event image
     const imgEl = document.getElementById('event-image');
-    imgEl.src = event.image || 'https://via.placeholder.com/1200x600/0a0e13/4da3ff?text=Event';
+    imgEl.src = event.image_url || event.image || '/static/assets/images/default-event.svg';
     imgEl.alt = event.title;
+    imgEl.onerror = function() {
+      this.src = '/static/assets/images/default-event.svg';
+    };
 
     // Badges
     const badgesContainer = document.getElementById('event-badges');
