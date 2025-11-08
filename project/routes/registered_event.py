@@ -16,29 +16,40 @@ def get_registered_events():
 def create_registered_event():
     data = request.get_json()
 
-    # Convert ISO 8601 string to MySQL-compatible datetime
+    # Check exactly one of event_id or event_identifier
+    if ("event_id" in data) == ("event_identifier" in data):
+        return jsonify({"error": "Exactly one of event_id or event_identifier must be provided"}), 400
+
+    # Convert ISO 8601 string to datetime
     try:
         registered_at = datetime.fromisoformat(data["registered_at"].replace("Z", "+00:00"))
     except Exception:
         return jsonify({"error": "Invalid datetime format"}), 400
 
-    # ===== Add this duplicate check here =====
-    existing = RegisteredEvent.query.filter_by(
-        user_id=data["user_id"], event_id=data["event_id"]
-    ).first()
+    # Duplicate check
+    if "event_id" in data:
+        existing = RegisteredEvent.query.filter_by(
+            user_id=data["user_id"], event_id=data["event_id"]
+        ).first()
+    else:
+        existing = RegisteredEvent.query.filter_by(
+            user_id=data["user_id"], event_identifier=data["event_identifier"]
+        ).first()
+
     if existing:
         return jsonify({"message": "User already registered for this event"}), 400
 
-    # Only create if it doesn't exist
     reg = RegisteredEvent(
         user_id=data["user_id"],
-        event_id=data["event_id"],
+        event_id=data.get("event_id"),
+        event_identifier=data.get("event_identifier"),
         registered_at=registered_at
     )
 
     db.session.add(reg)
     db.session.commit()
     return jsonify(reg.as_dict()), 201
+
 
 # DELETE registered event
 @registered_event_bp.route("/registered-events/user/<int:user_id>/event/<int:event_id>", methods=["DELETE"])

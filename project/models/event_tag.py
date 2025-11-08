@@ -3,11 +3,15 @@ from . import db
 
 class EventTag(db.Model):
     __tablename__ = "event_tag"
-    tag_id = db.Column(db.Integer, db.ForeignKey("tag.id"), primary_key=True)
-    event_id = db.Column(db.Integer, db.ForeignKey("event.id"), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey("tag.id"), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=True)
+    event_identifier = db.Column(db.String(45), nullable=True)
 
     def as_dict(self):
         return {
+            "id": self.id,
             "tag_id": self.tag_id,
-            "event_id": self.event_id
+            "event_id": self.event_id,
+            "event_identifier": self.event_identifier
         }

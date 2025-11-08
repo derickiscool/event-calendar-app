@@ -23,17 +23,29 @@ def get_review(review_id):
 def create_review():
     data = request.get_json()
 
+    # Check exactly one of event_id or event_identifier
+    if ("event_id" in data) == ("event_identifier" in data):
+        return jsonify({"error": "Exactly one of event_id or event_identifier must be provided"}), 400
+
     # Duplicate check
-    existing = Review.query.filter_by(
-        user_id=data.get("user_id"),
-        event_id=data.get("event_id")
-    ).first()
+    if "event_id" in data:
+        existing = Review.query.filter_by(
+            user_id=data.get("user_id"),
+            event_id=data.get("event_id")
+        ).first()
+    else:
+        existing = Review.query.filter_by(
+            user_id=data.get("user_id"),
+            event_identifier=data.get("event_identifier")
+        ).first()
+
     if existing:
         return jsonify({"message": "User has already reviewed this event"}), 400
 
     review = Review(
         user_id=data.get("user_id"),
         event_id=data.get("event_id"),
+        event_identifier=data.get("event_identifier"),
         score=data.get("score"),
         title=data.get("title"),
         body=data.get("body"),
@@ -42,6 +54,7 @@ def create_review():
     db.session.add(review)
     db.session.commit()
     return jsonify(review.as_dict()), 201
+
 
 
 # PUT update review

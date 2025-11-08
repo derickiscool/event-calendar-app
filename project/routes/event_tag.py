@@ -15,17 +15,23 @@ def get_event_tags():
 def create_event_tag():
     data = request.get_json()
 
+    # Check that exactly one of event_id or event_identifier is provided
+    if ("event_id" in data) == ("event_identifier" in data):
+        return jsonify({"error": "Exactly one of event_id or event_identifier must be provided"}), 400
+
     # Duplicate check
-    existing = EventTag.query.filter_by(
-        event_id=data.get("event_id"),
-        tag_id=data.get("tag_id")
+    existing = EventTag.query.filter(
+        (EventTag.tag_id == data["tag_id"]) &
+        (EventTag.event_id == data.get("event_id")) &
+        (EventTag.event_identifier == data.get("event_identifier"))
     ).first()
     if existing:
         return jsonify({"message": "EventTag already exists"}), 400
 
     et = EventTag(
+        tag_id=data["tag_id"],
         event_id=data.get("event_id"),
-        tag_id=data.get("tag_id")
+        event_identifier=data.get("event_identifier")
     )
     db.session.add(et)
     db.session.commit()
