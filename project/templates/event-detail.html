@@ -63,6 +63,10 @@
         </div>
 
         <div class="event-actions" id="event-actions" style="display: none;">
+          <button id="bookmark-btn" class="btn btn-secondary bookmark-btn" style="display: none;">
+            <span class="bookmark-icon">🔖</span>
+            <span class="bookmark-text">Bookmark Event</span>
+          </button>
           <a id="registration-link" href="#" target="_blank" class="btn btn-primary">Register Now</a>
         </div>
 
@@ -218,11 +222,19 @@
       descEl.innerHTML = '<p><em>No description available</em></p>';
     }
 
-    // Registration link
+    // Registration link and bookmark button
+    document.getElementById('event-actions').style.display = 'block';
+    
     if (event.registration_link) {
-      document.getElementById('event-actions').style.display = 'block';
       document.getElementById('registration-link').href = event.registration_link;
+      document.getElementById('registration-link').style.display = 'inline-block';
+    } else {
+      document.getElementById('registration-link').style.display = 'none';
     }
+    
+    // Always show bookmark button
+    document.getElementById('bookmark-btn').style.display = 'inline-block';
+    checkBookmarkStatus(event.id);
   }
 
   function showError(message) {
@@ -398,6 +410,118 @@
     messageEl.textContent = message;
     messageEl.className = `review-message ${type}`;
     messageEl.style.display = 'block';
+  }
+
+  // ===== BOOKMARK FUNCTIONALITY =====
+
+  let isBookmarked = false;
+
+  // Check if event is bookmarked
+  async function checkBookmarkStatus(eventId) {
+    try {
+      const response = await fetch(`${API_BASE}/registered-events/check?event_id=${encodeURIComponent(eventId)}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        isBookmarked = data.is_registered;
+        updateBookmarkButton();
+      }
+    } catch (err) {
+      console.error('Error checking bookmark status:', err);
+    }
+  }
+
+  // Update bookmark button appearance
+  function updateBookmarkButton() {
+    const btn = document.getElementById('bookmark-btn');
+    const icon = btn.querySelector('.bookmark-icon');
+    const text = btn.querySelector('.bookmark-text');
+
+    if (isBookmarked) {
+      btn.classList.add('bookmarked');
+      icon.textContent = '✅';
+      text.textContent = 'Bookmarked';
+    } else {
+      btn.classList.remove('bookmarked');
+      icon.textContent = '🔖';
+      text.textContent = 'Bookmark Event';
+    }
+  }
+
+  // Handle bookmark button click
+  document.getElementById('bookmark-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('bookmark-btn');
+    
+    // Disable button during request
+    btn.disabled = true;
+
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const response = await fetch(`${API_BASE}/registered-events/${encodeURIComponent(eventId)}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          isBookmarked = false;
+          updateBookmarkButton();
+          showBookmarkNotification('Bookmark removed', 'success');
+        } else {
+          showBookmarkNotification(data.error || 'Failed to remove bookmark', 'error');
+        }
+      } else {
+        // Add bookmark
+        const response = await fetch(`${API_BASE}/registered-events`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            event_id: eventId
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          isBookmarked = true;
+          updateBookmarkButton();
+          showBookmarkNotification('Event bookmarked!', 'success');
+        } else {
+          if (response.status === 401) {
+            showBookmarkNotification('Please log in to bookmark events', 'error');
+          } else {
+            showBookmarkNotification(data.error || 'Failed to bookmark event', 'error');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling bookmark:', err);
+      showBookmarkNotification('Failed to update bookmark', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Show bookmark notification
+  function showBookmarkNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `bookmark-notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
   }
 
   // Load reviews when event is loaded

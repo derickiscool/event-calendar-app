@@ -16,6 +16,7 @@
           {% if session.get('user_id') %}
             {# Authenticated user nav #}
             <a href="{{ url_for('main.manage_events') }}">Manage Events</a>
+            <a href="{{ url_for('main.bookmarks') }}">My Bookmarks</a>
             <a href="{{ url_for('main.profile') }}">Profile ({{ session.get('username') }})</a>
             <a href="#" id="logout-link">Logout</a>
           {% else %}

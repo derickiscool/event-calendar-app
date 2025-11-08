@@ -481,3 +481,171 @@ def create_review():
         db.session.rollback()
         return jsonify({'error': 'Failed to submit review'}), 500
 
+
+# ===== BOOKMARK/REGISTRATION ENDPOINTS =====
+
+@api_bp.route('/registered-events', methods=['GET'])
+def get_registered_events():
+    """
+    Get all events bookmarked by the current user.
+    Returns list of event_identifiers.
+    """
+    try:
+        from .models import db, RegisteredEvent
+        from flask import session
+        
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'You must be logged in'}), 401
+        
+        registered = RegisteredEvent.query.filter_by(user_id=user_id).all()
+        
+        event_ids = [reg.event_identifier for reg in registered if reg.event_identifier]
+        
+        return jsonify({
+            'status': 'success',
+            'event_ids': event_ids,
+            'count': len(event_ids)
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching registered events: {e}")
+        return jsonify({'error': 'Failed to fetch registered events'}), 500
+
+
+@api_bp.route('/registered-events/check', methods=['GET'])
+def check_event_registration():
+    """
+    Check if a specific event is bookmarked by the current user.
+    Query parameter: event_id (format: official_xxx or community_xxx)
+    """
+    try:
+        from .models import db, RegisteredEvent
+        from flask import session
+        
+        event_id = request.args.get('event_id')
+        user_id = session.get('user_id')
+        
+        if not event_id:
+            return jsonify({'error': 'Event ID is required'}), 400
+        
+        if not user_id:
+            return jsonify({'is_registered': False}), 200
+        
+        registration = RegisteredEvent.query.filter_by(
+            user_id=user_id,
+            event_identifier=event_id
+        ).first()
+        
+        return jsonify({
+            'is_registered': registration is not None
+        }), 200
+        
+    except Exception as e:
+        print(f"Error checking registration: {e}")
+        return jsonify({'error': 'Failed to check registration'}), 500
+
+
+@api_bp.route('/registered-events', methods=['POST'])
+def register_event():
+    """
+    Bookmark an event for the current user.
+    Requires: event_id in JSON body (format: official_xxx or community_xxx)
+    """
+    try:
+        from .models import db, RegisteredEvent
+        from flask import session
+        from datetime import datetime
+        
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Request body is required'}), 400
+        
+        event_id = data.get('event_id')
+        
+        if not event_id:
+            return jsonify({'error': 'Event ID is required'}), 400
+        
+        # Validate event_id format
+        if not (event_id.startswith('official_') or event_id.startswith('community_')):
+            return jsonify({'error': 'Invalid event ID format'}), 400
+        
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'You must be logged in to bookmark events'}), 401
+        
+        # Check if already bookmarked
+        existing = RegisteredEvent.query.filter_by(
+            user_id=user_id,
+            event_identifier=event_id
+        ).first()
+        
+        if existing:
+            return jsonify({'error': 'Already bookmarked this event'}), 400
+        
+        # For community events, extract numeric ID for foreign key
+        numeric_event_id = None
+        if event_id.startswith('community_'):
+            numeric_event_id = int(event_id.replace('community_', ''))
+        
+        # Create bookmark
+        registration = RegisteredEvent(
+            user_id=user_id,
+            event_id=numeric_event_id,
+            event_identifier=event_id,
+            registered_at=datetime.now()
+        )
+        
+        db.session.add(registration)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Event bookmarked successfully'
+        }), 201
+        
+    except Exception as e:
+        print(f"Error bookmarking event: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to bookmark event'}), 500
+
+
+@api_bp.route('/registered-events/<event_id>', methods=['DELETE'])
+def unregister_event(event_id):
+    """
+    Remove bookmark for an event.
+    URL parameter: event_id (format: official_xxx or community_xxx)
+    """
+    try:
+        from .models import db, RegisteredEvent
+        from flask import session
+        
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'You must be logged in'}), 401
+        
+        registration = RegisteredEvent.query.filter_by(
+            user_id=user_id,
+            event_identifier=event_id
+        ).first()
+        
+        if not registration:
+            return jsonify({'error': 'Event not bookmarked'}), 404
+        
+        db.session.delete(registration)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Bookmark removed successfully'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error removing bookmark: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to remove bookmark'}), 500
+

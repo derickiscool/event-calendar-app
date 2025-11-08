@@ -1235,6 +1235,73 @@ main {
   font-size: 1rem;
 }
 
+/* Bookmark Button */
+.bookmark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.bookmark-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--brand);
+}
+
+.bookmark-btn.bookmarked {
+  background: rgba(77, 163, 255, 0.15);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.bookmark-btn.bookmarked:hover {
+  background: rgba(77, 163, 255, 0.25);
+}
+
+.bookmark-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bookmark-icon {
+  font-size: 1.2rem;
+}
+
+/* Bookmark Notification */
+.bookmark-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateX(100px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.bookmark-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.bookmark-notification.success {
+  background: rgba(76, 175, 80, 0.95);
+  color: white;
+  border: 1px solid rgba(76, 175, 80, 1);
+}
+
+.bookmark-notification.error {
+  background: rgba(244, 67, 54, 0.95);
+  color: white;
+  border: 1px solid rgba(244, 67, 54, 1);
+}
+
 .loading-state,
 .error-state {
   text-align: center;

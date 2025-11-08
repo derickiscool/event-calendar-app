@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookmarks{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="bookmarks-page">
+    <div class="page-header">
+      <h1>My Bookmarked Events</h1>
+      <p class="subtitle">View and manage your saved events</p>
+    </div>
+
+    <div id="bookmarks-loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading your bookmarks...</p>
+    </div>
+
+    <div id="bookmarks-content" style="display: none;">
+      <div id="bookmarks-grid" class="bookmarks-grid"></div>
+      
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-icon">🔖</div>
+        <h2>No Bookmarks Yet</h2>
+        <p>Start exploring events and bookmark your favorites!</p>
+        <a href="/" class="btn btn-primary">Browse Events</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bookmarks-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .page-header .subtitle {
+    font-size: 1.1rem;
+    color: var(--muted);
+  }
+
+  .bookmarks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .bookmark-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .bookmark-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-color: var(--brand);
+  }
+
+  .bookmark-card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .bookmark-card-content {
+    padding: 1.5rem;
+  }
+
+  .bookmark-card-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .bookmark-card-type.official {
+    background: rgba(77, 163, 255, 0.2);
+    color: var(--brand);
+  }
+
+  .bookmark-card-type.community {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+  }
+
+  .bookmark-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .bookmark-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .bookmark-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bookmark-card-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .btn-view {
+    flex: 1;
+    padding: 0.75rem;
+    background: var(--brand);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+  }
+
+  .btn-view:hover {
+    background: var(--brand-hover);
+  }
+
+  .btn-remove {
+    padding: 0.75rem 1rem;
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-remove:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .empty-state h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .empty-state p {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+
+  .spinner {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid var(--brand);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 768px) {
+    .bookmarks-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+    }
+  }
+</style>
+
+<script type="module">
+  const API_BASE = window.API_BASE || '/api';
+
+  const loading = document.getElementById('bookmarks-loading');
+  const content = document.getElementById('bookmarks-content');
+  const grid = document.getElementById('bookmarks-grid');
+  const emptyState = document.getElementById('empty-state');
+
+  let bookmarkedEvents = [];
+
+  async function loadBookmarks() {
+    try {
+      // Get bookmarked event IDs
+      const response = await fetch(`${API_BASE}/registered-events`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error('Failed to load bookmarks');
+      }
+
+      const data = await response.json();
+      const eventIds = data.event_ids || [];
+
+      if (eventIds.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      // Fetch details for each event
+      bookmarkedEvents = [];
+      for (const eventId of eventIds) {
+        try {
+          const eventResponse = await fetch(`${API_BASE}/event/${eventId}`, {
+            credentials: 'include'
+          });
+          if (eventResponse.ok) {
+            const eventData = await eventResponse.json();
+            if (eventData.event) {
+              bookmarkedEvents.push(eventData.event);
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to load event ${eventId}:`, error);
+        }
+      }
+
+      if (bookmarkedEvents.length === 0) {
+        showEmptyState();
+      } else {
+        displayBookmarks();
+      }
+    } catch (error) {
+      console.error('Error loading bookmarks:', error);
+      showNotification('Failed to load bookmarks', 'error');
+      showEmptyState();
+    }
+  }
+
+  function displayBookmarks() {
+    loading.style.display = 'none';
+    content.style.display = 'block';
+
+    grid.innerHTML = bookmarkedEvents.map(event => {
+      const eventType = event.id.startsWith('official_') ? 'official' : 'community';
+      const dateStr = event.date || event.start_date || 'Date TBA';
+      const location = event.venue || event.location || 'Location TBA';
+      const title = event.title || 'Untitled Event';
+      const imageUrl = event.image || event.image_url || '/static/assets/images/event-placeholder.jpg';
+
+      return `
+        <div class="bookmark-card">
+          <img src="${imageUrl}" 
+               alt="${escapeHtml(title)}" 
+               class="bookmark-card-image"
+               onerror="this.src='/static/assets/images/event-placeholder.jpg'">
+          <div class="bookmark-card-content">
+            <div class="bookmark-card-type ${eventType}">
+              ${eventType === 'official' ? '⭐ Official' : '👥 Community'}
+            </div>
+            <h3 class="bookmark-card-title">${escapeHtml(title)}</h3>
+            <div class="bookmark-card-meta">
+              <div class="bookmark-card-meta-item">
+                <span>📅</span>
+                <span>${escapeHtml(dateStr)}</span>
+              </div>
+              <div class="bookmark-card-meta-item">
+                <span>📍</span>
+                <span>${escapeHtml(location)}</span>
+              </div>
+            </div>
+            <div class="bookmark-card-actions">
+              <a href="/event-detail?id=${event.id}" class="btn-view">View Details</a>
+              <button class="btn-remove" onclick="removeBookmark('${event.id}')">Remove</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showEmptyState() {
+    loading.style.display = 'none';
+    content.style.display = 'block';
+    grid.style.display = 'none';
+    emptyState.style.display = 'block';
+  }
+
+  window.removeBookmark = async function(eventId) {
+    try {
+      const response = await fetch(`${API_BASE}/registered-events/${eventId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove bookmark');
+      }
+
+      showNotification('Bookmark removed', 'success');
+      
+      // Remove from local array and re-render
+      bookmarkedEvents = bookmarkedEvents.filter(e => e.id !== eventId);
+      
+      if (bookmarkedEvents.length === 0) {
+        showEmptyState();
+      } else {
+        displayBookmarks();
+      }
+    } catch (error) {
+      console.error('Error removing bookmark:', error);
+      showNotification('Failed to remove bookmark', 'error');
+    }
+  };
+
+  function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `bookmark-notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Load bookmarks when page loads
+  loadBookmarks();
+</script>
+{% endblock %}

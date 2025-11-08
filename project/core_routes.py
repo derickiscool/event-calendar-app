@@ -44,6 +44,11 @@ def event_detail():
     """Render the event detail page."""
     return render_template('event-detail.html')
 
+@main_bp.route("/bookmarks")
+def bookmarks():
+    """Render the bookmarks page."""
+    return render_template('bookmarks.html')
+
 @main_bp.route("/health")
 def health_check():
     """Health check endpoint that checks database connections."""
