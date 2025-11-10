@@ -29,6 +29,9 @@
         <button class="pill" data-cat="film">Film</button>
         <button class="pill" data-cat="visual-arts">Visual Arts</button>
         <button class="pill" data-cat="workshops">Workshops</button>
+        <span class="filter-divider">|</span>
+        <button class="pill source-pill active" data-source="official">Official</button>
+        <button class="pill source-pill" data-source="community">Community</button>
       </div>
 
       <div class="search">
@@ -63,6 +66,7 @@
 
   const state = {
     cat: 'all',
+    source: 'official', // Default to showing official events
     q: '',
     allEvents: [],
     filteredEvents: [],
@@ -116,14 +120,13 @@
 
       if (response.status === 'success') {
         state.allEvents = response.events;
-        state.filteredEvents = response.events;
         state.currentPage = 1; // Reset to first page
 
         // Update stats display if exists
         updateStats(response);
 
-        // Render events with pagination
-        renderCurrentPage();
+        // Apply source filter
+        applyFilters();
       }
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -204,6 +207,14 @@
     renderCurrentPage();
   }
 
+  function applyFilters() {
+    // Apply source filter to allEvents (official or community)
+    state.filteredEvents = state.allEvents.filter(event => event.source === state.source);
+
+    state.currentPage = 1; // Reset to first page
+    renderCurrentPage();
+  }
+
   function updateStats(response) {
     // Update the page with event statistics
     const statsElement = document.getElementById('event-stats');
@@ -216,13 +227,23 @@
     }
   }
 
-  // Category filter handler
+  // Category and Source filter handler
   document.getElementById('catbar').addEventListener('click', e => {
     if (e.target.classList.contains('pill')) {
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      e.target.classList.add('active');
-      state.cat = e.target.dataset.cat;
-      fetchEvents();
+      // Handle source filter (official/community)
+      if (e.target.dataset.source) {
+        document.querySelectorAll('.source-pill').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+        state.source = e.target.dataset.source;
+        applyFilters();
+      }
+      // Handle category filter
+      else if (e.target.dataset.cat) {
+        document.querySelectorAll('.pill:not(.source-pill)').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+        state.cat = e.target.dataset.cat;
+        fetchEvents();
+      }
     }
   });
 
