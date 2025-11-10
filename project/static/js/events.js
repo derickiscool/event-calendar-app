@@ -101,7 +101,8 @@ export function renderEvents(events, container) {
  * @returns {string} - HTML string for event card
  */
 function createEventCard(event) {
-    const imageUrl = event.image || 'https://via.placeholder.com/400x250/0a0e13/4da3ff?text=Event';
+    const defaultImage = '/static/assets/images/default-event.svg';
+    const imageUrl = event.image || event.image_url || defaultImage;
     const title = escapeHtml(event.title || 'Untitled Event');
     const venue = escapeHtml(event.venue || 'Venue TBA');
     const date = event.date || 'Date TBA';
@@ -121,7 +122,7 @@ function createEventCard(event) {
       <img 
         src="${imageUrl}" 
         alt="${title}"
-        onerror="this.src='https://via.placeholder.com/400x250/0a0e13/4da3ff?text=Event'"
+        onerror="this.onerror=null; this.src='${defaultImage}'"
         class="card-img"
       >
       <div class="card-body">
