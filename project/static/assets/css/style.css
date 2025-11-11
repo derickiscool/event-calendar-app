@@ -865,6 +865,14 @@ select.error:focus {
   color: #b39ddb;
 }
 
+/* Custom category tags */
+.badge-tag {
+  background: rgba(77, 163, 255, 0.12);
+  border-color: rgba(77, 163, 255, 0.35);
+  color: #4da3ff;
+  font-weight: 500;
+}
+
 .card-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -1875,6 +1883,41 @@ select.error:focus {
 .tag-icon {
   font-size: 1.1rem;
   line-height: 1;
+}
+
+/* Create Tag Section */
+.create-tag-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.create-tag-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.create-tag-input-group input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.create-tag-input-group input:focus {
+  outline: none;
+  border-color: var(--brand);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.1);
+}
+
+.create-tag-input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .preferences-feedback {

@@ -132,6 +132,25 @@
         <span class="error-message" id="venue-postal-error"></span>
       </div>
 
+      <!-- Event Tags/Categories -->
+      <div class="form-group">
+        <label for="event-tags">Event Categories <span class="required">*</span></label>
+        <div id="event-tags-container" class="tags-grid">
+          <div class="loading">Loading categories...</div>
+        </div>
+        <small class="form-hint">Select at least one category that best describes your event</small>
+        <span class="error-message" id="tags-error"></span>
+        
+        <!-- Create New Category -->
+        <div class="create-tag-section" style="margin-top: 12px;">
+          <div class="create-tag-input-group">
+            <input type="text" id="new-tag-input" placeholder="Create new category..." maxlength="45" style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;">
+            <button type="button" id="create-tag-btn" class="btn-secondary" style="margin-left: 8px;">+ Add</button>
+          </div>
+          <span class="error-message" id="new-tag-error"></span>
+        </div>
+      </div>
+
       <!-- Event Image -->
       <div class="form-group">
         <label for="image-upload">Event Image</label>

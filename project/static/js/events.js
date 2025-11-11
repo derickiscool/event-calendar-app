@@ -110,12 +110,18 @@ function createEventCard(event) {
     const source = event.source || 'unknown';
     const sourceLabel = event.source_label || 'Event';
 
-    // Create badge HTML
-    const categoryBadge = category !== 'other'
-        ? `<span class="badge badge-${category}">${formatCategory(category)}</span>`
-        : '';
-
+    // Create badge HTML for source
     const sourceBadge = `<span class="badge badge-${source}">${source === 'official' ? '🏛️ Official' : '👥 Community'}</span>`;
+
+    // Create tags HTML (show actual tags if available, fallback to category)
+    let tagBadges = '';
+    if (event.tags && event.tags.length > 0) {
+        tagBadges = event.tags.map(tag => 
+            `<span class="badge badge-tag">${escapeHtml(tag)}</span>`
+        ).join('');
+    } else if (category !== 'other') {
+        tagBadges = `<span class="badge badge-${category}">${formatCategory(category)}</span>`;
+    }
 
     return `
     <div class="card event-card" data-event-id="${event.id}" data-category="${category}" data-source="${source}">
@@ -127,7 +133,7 @@ function createEventCard(event) {
       >
       <div class="card-body">
         <div class="card-badges">
-          ${categoryBadge}
+          ${tagBadges}
           ${sourceBadge}
         </div>
         <h3 class="card-title">${title}</h3>

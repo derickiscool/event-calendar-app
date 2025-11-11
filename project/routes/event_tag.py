@@ -15,9 +15,13 @@ def get_event_tags():
 def create_event_tag():
     data = request.get_json()
 
-    # Check that exactly one of event_id or event_identifier is provided
-    if ("event_id" in data) == ("event_identifier" in data):
-        return jsonify({"error": "Exactly one of event_id or event_identifier must be provided"}), 400
+    # Check that at least one of event_id or event_identifier is provided
+    if not data.get("event_id") and not data.get("event_identifier"):
+        return jsonify({"error": "At least one of event_id or event_identifier must be provided"}), 400
+
+    # Require tag_id
+    if not data.get("tag_id"):
+        return jsonify({"error": "tag_id is required"}), 400
 
     # Duplicate check
     existing = EventTag.query.filter(
