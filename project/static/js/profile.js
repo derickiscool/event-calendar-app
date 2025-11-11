@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   if (fnameInput) {
     fnameInput.addEventListener('blur', () => {
-      const error = validateName(fnameInput.value.trim(), 'First name', true);
+      const error = validateName(fnameInput.value.trim(), 'First name', false);
       showError('fname-edit', error);
     });
   }
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Validate all fields
       let hasErrors = false;
       
-      const fnameError = validateName(fname, 'First name', true);
+      const fnameError = validateName(fname, 'First name', false);
       if (fnameError) {
         showError('fname-edit', fnameError);
         hasErrors = true;
@@ -427,4 +427,47 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  
+  // Delete account button handler
+  const deleteAccountBtn = document.getElementById('delete-account-btn');
+  if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', async () => {
+      await handleDeleteAccount();
+    });
+  }
 });
+
+// Handle delete account with confirmation
+async function handleDeleteAccount() {
+  // Show confirmation dialog
+  const confirmMessage = `WARNING: This action cannot be undone!\n\nDeleting your account will permanently remove:\n• Your profile and personal information\n• All events you created\n• All your reviews and registrations\n• All uploaded images\n\nAre you absolutely sure you want to delete your account?`;
+  
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+  
+  // Second confirmation
+  const finalConfirm = confirm('This is your final warning. Delete account permanently?');
+  if (!finalConfirm) {
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/delete-account`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok && data.status === 'success') {
+      alert('Your account has been successfully deleted. You will now be redirected to the home page.');
+      window.location.href = '/';
+    } else {
+      alert(`Failed to delete account: ${data.message || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    alert('Failed to delete account. Please try again or contact support.');
+  }
+}

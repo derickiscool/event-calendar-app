@@ -142,12 +142,10 @@ def update_my_profile():
     postal_code = request.form.get('postal_code', '').strip()
     remove_avatar = request.form.get('remove_avatar', '').lower() == 'true'
     
-    # Validate first name (required)
-    if not fname:
-        return jsonify({"error": "First name is required"}), 400
-    if len(fname) > 45:
+    # Validate first name (optional)
+    if fname and len(fname) > 45:
         return jsonify({"error": "First name must be less than 45 characters"}), 400
-    if not re.match(r'^[a-zA-Z\s\'-]+$', fname):
+    if fname and not re.match(r'^[a-zA-Z\s\'-]+$', fname):
         return jsonify({"error": "First name can only contain letters, spaces, hyphens, and apostrophes"}), 400
     
     # Validate last name (optional)

@@ -252,6 +252,17 @@ select.error:focus {
   border-color: rgba(77, 163, 255, .5)
 }
 
+.btn-danger {
+  background: linear-gradient(180deg, var(--error), #e03030);
+  color: white;
+  border: 1px solid color-mix(in srgb, var(--error) 50%, transparent);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--error) 40%, transparent);
+  transform: translateY(-1px);
+}
+
 /* Grid + Cards */
 .grid {
   display: grid;
@@ -652,6 +663,7 @@ select.error:focus {
 .profile-actions {
   display: flex;
   justify-content: center;
+  gap: 1rem;
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);

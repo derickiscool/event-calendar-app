@@ -1,7 +1,8 @@
 # routes/user.py
-from flask import Blueprint, request, jsonify
-from project.models import db, User, UserProfile
+from flask import Blueprint, request, jsonify, session
+from project.models import db, User, UserProfile, Event
 from werkzeug.security import generate_password_hash
+import os
 
 user_bp = Blueprint("user", __name__)
 
@@ -78,3 +79,81 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({"message": "User and all related data deleted"})
+
+# DELETE current user account with file cleanup
+@user_bp.route("/delete-account", methods=["DELETE"])
+def delete_account():
+    """Delete the current user's account and all associated data."""
+    if 'user_id' not in session:
+        return jsonify({"status": "error", "message": "Not authenticated"}), 401
+    
+    user_id = session['user_id']
+    
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"status": "error", "message": "User not found"}), 404
+        
+        # Step 1: Delete all event images for user's events
+        user_events = Event.query.filter_by(user_id=user_id).all()
+        for event in user_events:
+            if event.image_url:
+                delete_event_image(event.image_url)
+        
+        # Step 2: Delete user's avatar
+        if user.profile and user.profile.avatar_url:
+            delete_user_avatar(user_id)
+        
+        # Step 3: Delete user (cascades will handle all related records)
+        db.session.delete(user)
+        db.session.commit()
+        
+        # Step 4: Clear session
+        session.clear()
+        
+        return jsonify({
+            "status": "success",
+            "message": "Account deleted successfully"
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to delete account: {str(e)}"
+        }), 500
+
+def delete_event_image(image_url):
+    """Delete event image file from disk."""
+    try:
+        if not image_url or image_url.startswith('http'):
+            return
+        
+        # Extract filename from URL path
+        filename = image_url.split('/')[-1]
+        filepath = os.path.join('project', 'static', 'assets', 'images', 'events', filename)
+        
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            print(f"Deleted event image: {filepath}")
+    except Exception as e:
+        print(f"Error deleting event image {image_url}: {str(e)}")
+
+def delete_user_avatar(user_id):
+    """Delete user avatar file from disk."""
+    try:
+        avatar_dir = os.path.join('project', 'static', 'assets', 'images', 'avatars')
+        
+        # Check if directory exists
+        if not os.path.exists(avatar_dir):
+            return
+        
+        # Find and delete avatar file with any extension
+        for filename in os.listdir(avatar_dir):
+            if filename.startswith(f'user_{user_id}.'):
+                filepath = os.path.join(avatar_dir, filename)
+                os.remove(filepath)
+                print(f"Deleted avatar: {filepath}")
+                break
+    except Exception as e:
+        print(f"Error deleting avatar for user {user_id}: {str(e)}")

@@ -4,7 +4,7 @@ from . import db
 class UserProfile(db.Model):
     __tablename__ = "user_profile"
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    fname = db.Column(db.String(45), nullable=False)
+    fname = db.Column(db.String(45))
     lname = db.Column(db.String(45))
     avatar_url = db.Column(db.String(255))
     phone = db.Column(db.String(16))
