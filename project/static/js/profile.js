@@ -3,6 +3,8 @@ const API_BASE = window.API_BASE || '/api';
 
 let currentProfile = null;
 let selectedAvatarFile = null;
+let allTags = [];
+let userPreferences = [];
 
 // Fetch user profile data
 async function loadProfile() {
@@ -252,6 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load profile data
   loadProfile();
   
+  // Load tags and preferences
+  loadTags();
+  
   // Edit button handler
   const editBtn = document.getElementById('edit-profile-btn');
   if (editBtn) {
@@ -471,3 +476,153 @@ async function handleDeleteAccount() {
     alert('Failed to delete account. Please try again or contact support.');
   }
 }
+
+// ===== USER PREFERENCES / TAGS =====
+
+// Load all available tags
+async function loadTags() {
+  try {
+    const res = await fetch(`${API_BASE}/tags`, {
+      credentials: 'include'
+    });
+    
+    if (!res.ok) throw new Error('Failed to load tags');
+    
+    allTags = await res.json();
+    await loadUserPreferences();
+  } catch (error) {
+    console.error('Error loading tags:', error);
+    showPreferencesFeedback('Failed to load tags', 'error');
+  }
+}
+
+// Load user's current preferences
+async function loadUserPreferences() {
+  try {
+    const res = await fetch(`${API_BASE}/preferences/me`, {
+      credentials: 'include'
+    });
+    
+    if (!res.ok) throw new Error('Failed to load preferences');
+    
+    const data = await res.json();
+    userPreferences = data.preferences.map(p => p.tag_id);
+    
+    renderTags();
+  } catch (error) {
+    console.error('Error loading preferences:', error);
+    showPreferencesFeedback('Failed to load preferences', 'error');
+  }
+}
+
+// Render tags as selectable chips
+function renderTags() {
+  const container = document.getElementById('tags-container');
+  if (!container) return;
+  
+  if (allTags.length === 0) {
+    container.innerHTML = '<p class="empty-state">No tags available yet</p>';
+    return;
+  }
+  
+  container.innerHTML = allTags.map(tag => {
+    const isSelected = userPreferences.includes(tag.id);
+    const icon = getTagIcon(tag.tag_name);
+    
+    return `
+      <div class="tag-chip ${isSelected ? 'selected' : ''}" 
+           data-tag-id="${tag.id}" 
+           onclick="togglePreference(${tag.id}, '${escapeHtml(tag.tag_name)}')">
+        <span class="tag-icon">${icon}</span>
+        <span>${escapeHtml(tag.tag_name)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// Toggle tag preference
+async function togglePreference(tagId, tagName) {
+  const isCurrentlySelected = userPreferences.includes(tagId);
+  
+  try {
+    if (isCurrentlySelected) {
+      // Remove preference
+      const res = await fetch(`${API_BASE}/preferences/me/${tagId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to remove preference');
+      
+      userPreferences = userPreferences.filter(id => id !== tagId);
+      showPreferencesFeedback(`Removed "${tagName}" from your interests`, 'success');
+    } else {
+      // Add preference
+      const res = await fetch(`${API_BASE}/preferences/me`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tag_id: tagId })
+      });
+      
+      if (!res.ok) throw new Error('Failed to add preference');
+      
+      userPreferences.push(tagId);
+      showPreferencesFeedback(`Added "${tagName}" to your interests`, 'success');
+    }
+    
+    renderTags();
+  } catch (error) {
+    console.error('Error toggling preference:', error);
+    showPreferencesFeedback('Failed to update preference', 'error');
+  }
+}
+
+// Get icon for tag
+function getTagIcon(tagName) {
+  const icons = {
+    'music': '🎵',
+    'theatre': '🎭',
+    'comedy': '😂',
+    'film': '🎬',
+    'visual arts': '🎨',
+    'visual-arts': '🎨',
+    'workshops': '🛠️',
+    'food': '🍽️',
+    'sports': '⚽',
+    'technology': '💻',
+    'dance': '💃',
+    'literature': '📚',
+    'festival': '🎪',
+    'exhibition': '🖼️',
+    'concert': '🎤',
+    'performance': '🎪'
+  };
+  
+  const normalized = tagName.toLowerCase().replace(/\s+/g, '-');
+  return icons[normalized] || icons[tagName.toLowerCase()] || '🏷️';
+}
+
+// Show feedback for preferences
+function showPreferencesFeedback(message, type = 'success') {
+  const feedback = document.getElementById('preferences-feedback');
+  if (!feedback) return;
+  
+  feedback.textContent = message;
+  feedback.className = `preferences-feedback ${type}`;
+  
+  setTimeout(() => {
+    feedback.textContent = '';
+    feedback.className = 'preferences-feedback';
+  }, 3000);
+}
+
+// Utility function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Make togglePreference available globally
+window.togglePreference = togglePreference;

@@ -6,79 +6,82 @@ import os
 
 user_bp = Blueprint("user", __name__)
 
-# GET all users
-@user_bp.route("/users", methods=["GET"])
-def get_users():
-    users = User.query.all()
-    return jsonify([u.as_dict() for u in users])
+# Commented out because these routes are not currently used.
+# using user_profile.py and auth.py routes instead for user management.
 
-# GET single user
-@user_bp.route("/users/<int:user_id>", methods=["GET"])
-def get_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    return jsonify(user.as_dict())
+# # GET all users
+# @user_bp.route("/users", methods=["GET"])
+# def get_users():
+#     users = User.query.all()
+#     return jsonify([u.as_dict() for u in users])
 
-# POST create user + profile
-@user_bp.route("/users", methods=["POST"])
-def create_user():
-    data = request.get_json()
+# # GET single user
+# @user_bp.route("/users/<int:user_id>", methods=["GET"])
+# def get_user(user_id):
+#     user = User.query.get(user_id)
+#     if not user:
+#         return jsonify({"error": "User not found"}), 404
+#     return jsonify(user.as_dict())
 
-    # Check uniqueness
-    if User.query.filter_by(email=data.get("email")).first():
-        return jsonify({"error": "Email already exists"}), 400
-    if User.query.filter_by(username=data.get("username")).first():
-        return jsonify({"error": "Username already exists"}), 400
+# # POST create user + profile
+# @user_bp.route("/users", methods=["POST"])
+# def create_user():
+#     data = request.get_json()
 
-    # Hash password
-    password_hashed = generate_password_hash(data.get("password_hash"))
+#     # Check uniqueness
+#     if User.query.filter_by(email=data.get("email")).first():
+#         return jsonify({"error": "Email already exists"}), 400
+#     if User.query.filter_by(username=data.get("username")).first():
+#         return jsonify({"error": "Username already exists"}), 400
 
-    new_user = User(
-        username=data.get("username"),
-        email=data.get("email"),
-        password_hash=password_hashed
-    )
-    db.session.add(new_user)
-    db.session.commit()  # generate user id
+#     # Hash password
+#     password_hashed = generate_password_hash(data.get("password_hash"))
 
-    # default profile
-    profile = UserProfile(
-        user_id=new_user.id,
-        fname=data.get("fname", ""),
-        lname=data.get("lname", "")
-    )
-    db.session.add(profile)
-    db.session.commit()
+#     new_user = User(
+#         username=data.get("username"),
+#         email=data.get("email"),
+#         password_hash=password_hashed
+#     )
+#     db.session.add(new_user)
+#     db.session.commit()  # generate user id
 
-    return jsonify(new_user.as_dict()), 201
+#     # default profile
+#     profile = UserProfile(
+#         user_id=new_user.id,
+#         fname=data.get("fname", ""),
+#         lname=data.get("lname", "")
+#     )
+#     db.session.add(profile)
+#     db.session.commit()
 
-# PUT update user
-@user_bp.route("/users/<int:user_id>", methods=["PUT"])
-def update_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    data = request.get_json()
+#     return jsonify(new_user.as_dict()), 201
 
-    user.username = data.get("username", user.username)
-    user.email = data.get("email", user.email)
-    if "password_hash" in data:
-        user.password_hash = generate_password_hash(data["password_hash"])
+# # PUT update user
+# @user_bp.route("/users/<int:user_id>", methods=["PUT"])
+# def update_user(user_id):
+#     user = User.query.get(user_id)
+#     if not user:
+#         return jsonify({"error": "User not found"}), 404
+#     data = request.get_json()
 
-    db.session.commit()
-    return jsonify(user.as_dict())
+#     user.username = data.get("username", user.username)
+#     user.email = data.get("email", user.email)
+#     if "password_hash" in data:
+#         user.password_hash = generate_password_hash(data["password_hash"])
 
-# DELETE user (cascades handled automatically)
-@user_bp.route("/users/<int:user_id>", methods=["DELETE"])
-def delete_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+#     db.session.commit()
+#     return jsonify(user.as_dict())
 
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({"message": "User and all related data deleted"})
+# # DELETE user (cascades handled automatically)
+# @user_bp.route("/users/<int:user_id>", methods=["DELETE"])
+# def delete_user(user_id):
+#     user = User.query.get(user_id)
+#     if not user:
+#         return jsonify({"error": "User not found"}), 404
+
+#     db.session.delete(user)
+#     db.session.commit()
+#     return jsonify({"message": "User and all related data deleted"})
 
 # DELETE current user account with file cleanup
 @user_bp.route("/delete-account", methods=["DELETE"])

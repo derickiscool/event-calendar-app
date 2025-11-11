@@ -23,6 +23,9 @@
 
       <div class="catbar" id="catbar">
         <button class="pill active" data-cat="all">All</button>
+        <button class="pill" data-cat="preferences" id="preferences-filter" style="display: none;">
+          My Preferences
+        </button>
         <button class="pill" data-cat="music">Music</button>
         <button class="pill" data-cat="theatre">Theatre</button>
         <button class="pill" data-cat="comedy">Comedy</button>
@@ -72,7 +75,9 @@
     filteredEvents: [],
     loading: false,
     currentPage: 1,
-    eventsPerPage: 12 // Show 12 events per page (4 rows of 3)
+    eventsPerPage: 12, // Show 12 events per page (4 rows of 3)
+    userPreferences: [], // User's preferred tag names
+    isLoggedIn: false
   };
 
   // Check backend health on page load
@@ -209,10 +214,56 @@
 
   function applyFilters() {
     // Apply source filter to allEvents (official or community)
-    state.filteredEvents = state.allEvents.filter(event => event.source === state.source);
-
+    let filtered = state.allEvents.filter(event => event.source === state.source);
+    
+    // If "My Preferences" filter is active and user has preferences, filter by preferred categories
+    if (state.cat === 'preferences' && state.userPreferences.length > 0) {
+      filtered = filtered.filter(event => {
+        if (!event.category) return false;
+        // Normalize category for comparison (handle "visual-arts" vs "visual arts")
+        const normalizedCategory = event.category.toLowerCase().replace(/\s+/g, '-');
+        return state.userPreferences.some(pref => {
+          const normalizedPref = pref.toLowerCase().replace(/\s+/g, '-');
+          return normalizedCategory === normalizedPref;
+        });
+      });
+    }
+    
+    state.filteredEvents = filtered;
     state.currentPage = 1; // Reset to first page
     renderCurrentPage();
+  }
+  
+  // Load user preferences
+  async function loadUserPreferences() {
+    try {
+      const res = await fetch('/api/preferences/me', {
+        credentials: 'include'
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        state.isLoggedIn = true;
+        
+        // Extract tag names from the tags array
+        state.userPreferences = data.tags.map(tag => tag.tag_name);
+        
+        // Show the "My Preferences" button if user has preferences
+        if (state.userPreferences.length > 0) {
+          const prefsBtn = document.getElementById('preferences-filter');
+          if (prefsBtn) {
+            prefsBtn.style.display = 'inline-block';
+            prefsBtn.textContent = `My Preferences (${state.userPreferences.length})`;
+          }
+        }
+      } else if (res.status === 401) {
+        // User not logged in - that's okay
+        state.isLoggedIn = false;
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      state.isLoggedIn = false;
+    }
   }
 
   function updateStats(response) {
@@ -242,7 +293,13 @@
         document.querySelectorAll('.pill:not(.source-pill)').forEach(p => p.classList.remove('active'));
         e.target.classList.add('active');
         state.cat = e.target.dataset.cat;
-        fetchEvents();
+        
+        // If switching to "My Preferences", just apply filters without fetching
+        if (state.cat === 'preferences') {
+          applyFilters();
+        } else {
+          fetchEvents();
+        }
       }
     }
   });
@@ -287,8 +344,9 @@
   });
 
   // Initialize on page load
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     checkBackend();
+    await loadUserPreferences(); // Load preferences first
     fetchEvents();
   });
 </script>
