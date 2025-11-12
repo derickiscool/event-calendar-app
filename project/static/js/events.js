@@ -116,7 +116,7 @@ function createEventCard(event) {
     // Create tags HTML (show actual tags if available, fallback to category)
     let tagBadges = '';
     if (event.tags && event.tags.length > 0) {
-        tagBadges = event.tags.map(tag => 
+        tagBadges = event.tags.map(tag =>
             `<span class="badge badge-tag">${escapeHtml(tag)}</span>`
         ).join('');
     } else if (category !== 'other') {

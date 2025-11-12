@@ -4,29 +4,19 @@
 <div class="event-form-container">
   <div class="event-form-card">
     <h1>Create New Event</h1>
-    
+
     <form id="event-form" class="event-form" enctype="multipart/form-data">
       <!-- Event Title -->
       <div class="form-group">
         <label for="title">Event Title <span class="required">*</span></label>
-        <input 
-          id="title" 
-          name="title" 
-          type="text" 
-          required 
-          maxlength="255"
-          placeholder="Enter event title">
+        <input id="title" name="title" type="text" required maxlength="255" placeholder="Enter event title">
         <span class="error-message" id="title-error"></span>
       </div>
 
       <!-- Event Description -->
       <div class="form-group">
         <label for="description">Description</label>
-        <textarea 
-          id="description" 
-          name="description" 
-          rows="5"
-          placeholder="Describe your event..."
+        <textarea id="description" name="description" rows="5" placeholder="Describe your event..."
           maxlength="2000"></textarea>
         <small class="form-hint"><span id="desc-count">0</span>/2000 characters</small>
         <span class="error-message" id="description-error"></span>
@@ -36,21 +26,13 @@
       <div class="form-row">
         <div class="form-group">
           <label for="start-date">Start Date <span class="required">*</span></label>
-          <input 
-            id="start-date" 
-            name="start_date" 
-            type="date" 
-            required>
+          <input id="start-date" name="start_date" type="date" required>
           <span class="error-message" id="start-date-error"></span>
         </div>
 
         <div class="form-group">
           <label for="start-time">Start Time <span class="required">*</span></label>
-          <input 
-            id="start-time" 
-            name="start_time" 
-            type="time" 
-            required>
+          <input id="start-time" name="start_time" type="time" required>
           <span class="error-message" id="start-time-error"></span>
         </div>
       </div>
@@ -59,21 +41,13 @@
       <div class="form-row">
         <div class="form-group">
           <label for="end-date">End Date <span class="required">*</span></label>
-          <input 
-            id="end-date" 
-            name="end_date" 
-            type="date" 
-            required>
+          <input id="end-date" name="end_date" type="date" required>
           <span class="error-message" id="end-date-error"></span>
         </div>
 
         <div class="form-group">
           <label for="end-time">End Time <span class="required">*</span></label>
-          <input 
-            id="end-time" 
-            name="end_time" 
-            type="time" 
-            required>
+          <input id="end-time" name="end_time" type="time" required>
           <span class="error-message" id="end-time-error"></span>
         </div>
       </div>
@@ -81,37 +55,21 @@
       <!-- Location -->
       <div class="form-group">
         <label for="location">Location</label>
-        <input 
-          id="location" 
-          name="location" 
-          type="text" 
-          maxlength="255"
-          placeholder="e.g., Main Hall, Building A">
+        <input id="location" name="location" type="text" maxlength="255" placeholder="e.g., Main Hall, Building A">
         <span class="error-message" id="location-error"></span>
       </div>
 
       <!-- Venue Selection -->
       <div class="form-group">
         <label for="venue-name">Venue Name <span class="required">*</span></label>
-        <input 
-          id="venue-name" 
-          name="venue_name" 
-          type="text" 
-          required 
-          maxlength="255"
-          placeholder="Enter venue name">
+        <input id="venue-name" name="venue_name" type="text" required maxlength="255" placeholder="Enter venue name">
         <span class="error-message" id="venue-name-error"></span>
       </div>
 
       <!-- Venue Address -->
       <div class="form-group">
         <label for="venue-address">Venue Address <span class="required">*</span></label>
-        <input 
-          id="venue-address" 
-          name="venue_address" 
-          type="text" 
-          required 
-          maxlength="255"
+        <input id="venue-address" name="venue_address" type="text" required maxlength="255"
           placeholder="Enter venue address">
         <span class="error-message" id="venue-address-error"></span>
       </div>
@@ -119,13 +77,7 @@
       <!-- Venue Postal Code -->
       <div class="form-group">
         <label for="venue-postal">Venue Postal Code <span class="required">*</span></label>
-        <input 
-          id="venue-postal" 
-          name="venue_postal" 
-          type="text" 
-          required 
-          maxlength="6"
-          pattern="\d{6}"
+        <input id="venue-postal" name="venue_postal" type="text" required maxlength="6" pattern="\d{6}"
           placeholder="123456">
         <small class="form-hint">6 digits</small>
         <span class="error-message" id="venue-postal-error"></span>
@@ -139,11 +91,12 @@
         </div>
         <small class="form-hint">Select at least one category that best describes your event</small>
         <span class="error-message" id="tags-error"></span>
-        
+
         <!-- Create New Category -->
         <div class="create-tag-section" style="margin-top: 12px;">
           <div class="create-tag-input-group">
-            <input type="text" id="new-tag-input" placeholder="Create new category..." maxlength="45" style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;">
+            <input type="text" id="new-tag-input" placeholder="Create new category..." maxlength="45"
+              style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;">
             <button type="button" id="create-tag-btn" class="btn-secondary" style="margin-left: 8px;">+ Add</button>
           </div>
           <span class="error-message" id="new-tag-error"></span>
@@ -155,10 +108,12 @@
         <label for="image-upload">Event Image</label>
         <div class="image-upload-container">
           <div class="image-preview">
-            <img id="image-preview-img" src="{{ url_for('static', filename='assets/images/default-event.svg') }}" alt="Event Image Preview">
+            <img id="image-preview-img" src="{{ url_for('static', filename='assets/images/default-event.svg') }}"
+              alt="Event Image Preview">
           </div>
           <div class="image-upload-controls">
-            <input id="image-upload" name="image" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display: none;">
+            <input id="image-upload" name="image" type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
+              style="display: none;">
             <button type="button" id="choose-image-btn" class="btn btn-secondary">Choose Image</button>
             <button type="button" id="remove-image-btn" class="btn btn-secondary" style="display: none;">Remove</button>
           </div>

@@ -1680,6 +1680,54 @@ select.error:focus {
   margin: 0;
 }
 
+/* Review Actions */
+.review-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.review-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.review-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.review-btn.edit-btn {
+  background: rgba(77, 163, 255, 0.15);
+  color: #4da3ff;
+  border: 1px solid rgba(77, 163, 255, 0.3);
+}
+
+.review-btn.edit-btn:hover {
+  background: rgba(77, 163, 255, 0.25);
+  border-color: rgba(77, 163, 255, 0.5);
+}
+
+.review-btn.delete-btn {
+  background: rgba(244, 67, 54, 0.15);
+  color: #ef5350;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.review-btn.delete-btn:hover {
+  background: rgba(244, 67, 54, 0.25);
+  border-color: rgba(244, 67, 54, 0.5);
+}
+
 /* Manage Events Page */
 .manage-events-container {
   max-width: 1200px;
@@ -1953,11 +2001,11 @@ select.error:focus {
   .review-header {
     flex-direction: column;
   }
-  
+
   .tags-grid {
     gap: 0.5rem;
   }
-  
+
   .tag-chip {
     font-size: 0.85rem;
     padding: 0.5rem 0.8rem;
