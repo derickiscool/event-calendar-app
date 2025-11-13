@@ -66,7 +66,7 @@ function createEventCard(event) {
         </div>
         <p class="event-description">${truncatedDesc}</p>
         <div class="event-actions">
-          <a href="/event-edit?id=${event.id}" class="btn btn-secondary btn-sm">Edit</a>
+          <button class="btn btn-secondary btn-sm edit-event-btn" data-event-id="${event.id}">Edit</button>
           <button class="btn btn-danger btn-sm delete-event-btn" data-event-id="${event.id}">Delete</button>
         </div>
       </div>
@@ -92,7 +92,8 @@ function displayEvents(events) {
     eventsList.classList.remove('hidden');
     eventsList.innerHTML = events.map(event => createEventCard(event)).join('');
 
-    // Attach delete handlers
+    // Attach edit and delete handlers
+    attachEditHandlers();
     attachDeleteHandlers();
   }
 }
@@ -131,6 +132,20 @@ async function deleteEvent(eventId) {
     console.error('Error deleting event:', error);
     alert('Network error. Please try again.');
   }
+}
+
+// Attach edit button handlers
+function attachEditHandlers() {
+  const editButtons = document.querySelectorAll('.edit-event-btn');
+  editButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const eventId = btn.getAttribute('data-event-id');
+      // Store event ID in sessionStorage instead of URL
+      sessionStorage.setItem('editEventId', eventId);
+      // Navigate to edit page without ID in URL
+      window.location.href = '/event-edit';
+    });
+  });
 }
 
 // Attach delete button handlers

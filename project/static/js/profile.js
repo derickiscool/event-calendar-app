@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Handle delete account with confirmation
 async function handleDeleteAccount() {
   // Show confirmation dialog
-  const confirmMessage = `WARNING: This action cannot be undone!\n\nDeleting your account will permanently remove:\n• Your profile and personal information\n• All events you created\n• All your reviews and registrations\n• All uploaded images\n\nAre you absolutely sure you want to delete your account?`;
+  const confirmMessage = `WARNING: This action cannot be undone!\n\nDeleting your account will permanently remove:\n• Your profile and personal information\n• All events you created\n• All your reviews and Bookmarks\n• All uploaded images\n\nAre you absolutely sure you want to delete your account?`;
 
   if (!confirm(confirmMessage)) {
     return;

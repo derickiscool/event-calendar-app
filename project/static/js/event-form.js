@@ -10,21 +10,33 @@ let selectedTags = new Set();
 
 // Load event data for editing
 async function loadEventData() {
-  // Get event ID from URL query parameter
-  const urlParams = new URLSearchParams(window.location.search);
-  eventId = urlParams.get('id');
-
+  // Get event ID from sessionStorage (set by manage-events page)
+  eventId = sessionStorage.getItem('editEventId');
+  
   if (!eventId) {
     showFeedback('No event ID provided', 'error');
+    setTimeout(() => {
+      window.location.href = '/manage-events';
+    }, 2000); // Give user time to read error message (2 seconds)
     return;
   }
-
+  
+  // Clear the sessionStorage after retrieving
+  sessionStorage.removeItem('editEventId');
+  
   try {
-    const res = await fetch(`${API_BASE}/events/${eventId}`, {
+    // Use the secure edit endpoint that checks ownership
+    const res = await fetch(`${API_BASE}/events/edit/${eventId}`, {
       credentials: 'include'
     });
 
     if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Please log in to edit events');
+      }
+      if (res.status === 403) {
+        throw new Error('You do not have permission to edit this event');
+      }
       if (res.status === 404) {
         throw new Error('Event not found');
       }
@@ -37,6 +49,11 @@ async function loadEventData() {
   } catch (error) {
     console.error('Error loading event:', error);
     showFeedback(error.message || 'Failed to load event data', 'error');
+    
+    // Redirect to manage events after showing error
+    setTimeout(() => {
+      window.location.href = '/manage-events';
+    }, 2000);
   }
 }
 
@@ -282,7 +299,7 @@ function handleImageSelect(event) {
 
   // Show preview
   const reader = new FileReader();
-  reader.onload = function (e) {
+  reader.onload = function(e) {
     const preview = document.getElementById('image-preview-img');
     if (preview) {
       preview.src = e.target.result;

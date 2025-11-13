@@ -104,12 +104,31 @@ def get_my_events():
     events = Event.query.filter_by(user_id=session["user_id"]).order_by(Event.start_datetime.desc()).all()
     return jsonify([e.as_dict() for e in events])
 
-# GET single event
+# GET single event 
 @event_bp.route("/events/<int:event_id>", methods=["GET"])
 def get_event(event_id):
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"error": "Event not found"}), 404
+    return jsonify(event.as_dict())
+
+# GET event for editing (requires authentication and ownership)
+@event_bp.route("/events/edit/<int:event_id>", methods=["GET"])
+def get_event_for_edit(event_id):
+    from flask import session
+    
+    # Check authentication
+    if "user_id" not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+    
+    # Check ownership - only event creator can load it for editing
+    if event.user_id != session["user_id"]:
+        return jsonify({"error": "You don't have permission to edit this event"}), 403
+    
     return jsonify(event.as_dict())
 
 # POST create event
