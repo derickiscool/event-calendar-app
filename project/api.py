@@ -110,6 +110,7 @@ def get_all_events():
             for event in mongo_events:
                 try:
                     # Transform MongoDB event to unified format
+                    category = _categorize_event(event.get('title', '') + ' ' + event.get('description', ''))
                     unified_event = {
                         'id': f"official_{str(event['_id'])}",
                         'title': event.get('title', 'Untitled Event'),
@@ -120,11 +121,12 @@ def get_all_events():
                         'venue': event.get('venue_name', 'Venue TBA'),
                         'location': event.get('address', ''),
                         'image': event.get('image_url', ''),
-                        'category': _categorize_event(event.get('title', '') + ' ' + event.get('description', '')),
+                        'category': category,
                         'source': 'official',
                         'source_label': 'Official Event',
                         'registration_link': event.get('registration_link', ''),
-                        'external_source': event.get('source', '')
+                        'external_source': event.get('source', ''),
+                        'tags': [category] if category else []  # Include category as a tag for search
                     }
                     all_events.append(unified_event)
                 except Exception as inner_e:
@@ -201,6 +203,8 @@ def get_all_events():
             if search_query in e.get('title', '').lower() 
             or search_query in e.get('description', '').lower()
             or search_query in e.get('venue', '').lower()
+            or search_query in e.get('location', '').lower()
+            or any(search_query in tag.lower() for tag in e.get('tags', []))
         ]
     
     # 4. Sort by date (newest first)
