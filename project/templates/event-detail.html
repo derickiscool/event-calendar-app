@@ -28,7 +28,7 @@
 
       <div class="event-content">
         <h1 id="event-title" class="event-detail-title">Event Title</h1>
-        
+
         <div class="event-meta-grid">
           <div class="meta-item">
             <span class="meta-icon">📅</span>
@@ -37,7 +37,7 @@
               <p id="event-date">Date TBA</p>
             </div>
           </div>
-          
+
           <div class="meta-item">
             <span class="meta-icon">📍</span>
             <div class="meta-content">
@@ -45,7 +45,7 @@
               <p id="event-venue">Venue TBA</p>
             </div>
           </div>
-          
+
           <div class="meta-item" id="location-item" style="display: none;">
             <span class="meta-icon">🗺️</span>
             <div class="meta-content">
@@ -73,7 +73,7 @@
         <!-- Reviews Section -->
         <div class="reviews-section">
           <h2>Reviews & Ratings</h2>
-          
+
           <!-- Reviews Summary -->
           <div id="reviews-summary" class="reviews-summary" style="display: none;">
             <div class="average-rating">
@@ -83,9 +83,30 @@
             </div>
           </div>
 
+          <!-- Your Review (Pinned at Top) -->
+          <div id="user-review-card" class="user-review-card" style="display: none;">
+            <div class="user-review-header">
+              <h3>Your Review</h3>
+              <div class="user-review-actions">
+                <button id="edit-user-review-btn" class="btn-icon" title="Edit review">
+                  <span>✏️</span>
+                </button>
+                <button id="delete-user-review-btn" class="btn-icon" title="Delete review">
+                  <span>🗑️</span>
+                </button>
+              </div>
+            </div>
+            <div class="user-review-content">
+              <div class="user-review-rating" id="user-review-stars"></div>
+              <h4 id="user-review-title" class="user-review-title"></h4>
+              <p id="user-review-body" class="user-review-body"></p>
+              <span id="user-review-date" class="user-review-date"></span>
+            </div>
+          </div>
+
           <!-- Submit Review Form -->
           <div class="review-form-container">
-            <h3>Write a Review</h3>
+            <h3 id="review-form-title">Write a Review</h3>
             <form id="review-form" class="review-form">
               <div class="form-group">
                 <label for="review-rating">Rating *</label>
@@ -105,12 +126,14 @@
 
               <div class="form-group">
                 <label for="review-title">Review Title *</label>
-                <input type="text" id="review-title" name="title" placeholder="Summarize your experience" required maxlength="255">
+                <input type="text" id="review-title" name="title" placeholder="Summarize your experience" required
+                  maxlength="255">
               </div>
 
               <div class="form-group">
                 <label for="review-comment">Your Review *</label>
-                <textarea id="review-comment" name="comment" rows="4" placeholder="Share your experience with this event..." required></textarea>
+                <textarea id="review-comment" name="comment" rows="4"
+                  placeholder="Share your experience with this event..." required></textarea>
               </div>
 
               <div class="form-actions">
@@ -122,7 +145,7 @@
 
           <!-- Existing Reviews List -->
           <div class="reviews-list">
-            <h3>Reviews</h3>
+            <h3 id="other-reviews-title">Reviews</h3>
             <div id="reviews-container" class="reviews-container">
               <p class="no-reviews">No reviews yet. Be the first to review!</p>
             </div>
@@ -155,13 +178,13 @@
   async function loadEventDetails(id) {
     try {
       const response = await fetch(`${API_BASE}/event/${encodeURIComponent(id)}`);
-      
+
       if (!response.ok) {
         throw new Error('Event not found');
       }
 
       const data = await response.json();
-      
+
       if (data.status === 'success' && data.event) {
         displayEvent(data.event);
       } else {
@@ -180,7 +203,7 @@
 
     // Set title and meta tags
     document.title = `${event.title} — Event Calendar`;
-    
+
     // Event title
     document.getElementById('event-title').textContent = event.title;
 
@@ -188,18 +211,18 @@
     const imgEl = document.getElementById('event-image');
     imgEl.src = event.image_url || event.image || '/static/assets/images/default-event.svg';
     imgEl.alt = event.title;
-    imgEl.onerror = function() {
+    imgEl.onerror = function () {
       this.src = '/static/assets/images/default-event.svg';
     };
 
     // Badges
     const badgesContainer = document.getElementById('event-badges');
     let badges = [];
-    
+
     if (event.category && event.category !== 'other') {
       badges.push(`<span class="badge badge-${event.category}">${formatCategory(event.category)}</span>`);
     }
-    
+
     badges.push(`<span class="badge badge-${event.source}">${event.source === 'official' ? '🏛️ Official' : '👥 Community'}</span>`);
     badgesContainer.innerHTML = badges.join('');
 
@@ -227,14 +250,14 @@
 
     // Registration link and bookmark button
     document.getElementById('event-actions').style.display = 'block';
-    
+
     if (event.registration_link) {
       document.getElementById('registration-link').href = event.registration_link;
       document.getElementById('registration-link').style.display = 'inline-block';
     } else {
       document.getElementById('registration-link').style.display = 'none';
     }
-    
+
     // Always show bookmark button
     document.getElementById('bookmark-btn').style.display = 'inline-block';
     checkBookmarkStatus(event.id);
@@ -268,6 +291,7 @@
   // ===== REVIEWS FUNCTIONALITY =====
 
   let currentUserId = null;
+  let hasUserReviewed = false;
 
   // Get current user
   async function getCurrentUser() {
@@ -275,7 +299,7 @@
       const response = await fetch(`${API_BASE}/profile/me`, {
         credentials: 'include'
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         currentUserId = data.user.id;
@@ -289,7 +313,7 @@
   async function loadReviews(eventId) {
     try {
       const response = await fetch(`${API_BASE}/reviews?event_id=${encodeURIComponent(eventId)}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to load reviews');
       }
@@ -305,42 +329,52 @@
   // Display reviews in the list
   function displayReviews(reviews) {
     const container = document.getElementById('reviews-container');
-    
+    const userReviewCard = document.getElementById('user-review-card');
+    const otherReviewsTitle = document.getElementById('other-reviews-title');
+
     console.log('Displaying reviews:', reviews);
+
+    // Separate user's review from others
+    let userReview = null;
+    let otherReviews = [];
     
-    if (!reviews || reviews.length === 0) {
-      container.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to review!</p>';
+    if (currentUserId && reviews && reviews.length > 0) {
+      userReview = reviews.find(review => review.user_id === currentUserId);
+      otherReviews = reviews.filter(review => review.user_id !== currentUserId);
+    } else {
+      otherReviews = reviews || [];
+    }
+
+    hasUserReviewed = userReview !== null;
+    
+    // Display user's review in pinned card
+    if (userReview) {
+      displayUserReviewCard(userReview);
+      otherReviewsTitle.textContent = 'Other Reviews';
+    } else {
+      userReviewCard.style.display = 'none';
+      otherReviewsTitle.textContent = 'Reviews';
+    }
+    
+    updateReviewFormVisibility();
+
+    // Display other reviews
+    if (otherReviews.length === 0) {
+      if (userReview) {
+        container.innerHTML = '<p class="no-reviews">No other reviews yet.</p>';
+      } else {
+        container.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to review!</p>';
+      }
       return;
     }
 
-    container.innerHTML = reviews.map(review => {
+    container.innerHTML = otherReviews.map(review => {
       console.log('Processing review:', review);
-      const isOwnReview = currentUserId && review.user_id === currentUserId;
-      
+
       // API returns 'rating' and 'comment', normalize to score/body for consistency
       const score = review.rating || review.score;
       const body = review.comment || review.body;
       const title = review.title || '';
-      
-      // Store raw data in a way that's safe for JSON
-      const reviewData = JSON.stringify({
-        id: review.id,
-        title: title,
-        body: body,
-        score: score
-      }).replace(/"/g, '&quot;');
-      
-      const actionButtons = isOwnReview ? `
-        <div class="review-actions">
-          <button class="review-btn edit-btn" 
-                  data-review-data="${reviewData}">
-            ✏️ Edit
-          </button>
-          <button class="review-btn delete-btn" data-review-id="${review.id}">
-            🗑️ Delete
-          </button>
-        </div>
-      ` : '';
 
       return `
         <div class="review-card" data-review-id="${review.id}">
@@ -357,41 +391,37 @@
           <div class="review-body">
             <p>${escapeHtml(body)}</p>
           </div>
-          ${actionButtons}
         </div>
       `;
     }).join('');
+  }
 
-    // Add event listeners for edit and delete buttons
-    setTimeout(() => {
-      const editBtns = container.querySelectorAll('.edit-btn');
-      const deleteBtns = container.querySelectorAll('.delete-btn');
-      
-      console.log('Found edit buttons:', editBtns.length);
-      console.log('Found delete buttons:', deleteBtns.length);
-      
-      editBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          console.log('Edit button clicked');
-          try {
-            const reviewDataStr = this.getAttribute('data-review-data');
-            const reviewData = JSON.parse(reviewDataStr.replace(/&quot;/g, '"'));
-            console.log('Review data:', reviewData);
-            window.editReview(reviewData.id, reviewData.title, reviewData.body, reviewData.score);
-          } catch (error) {
-            console.error('Error parsing review data:', error);
-          }
-        });
-      });
+  // Display user's review in pinned card
+  function displayUserReviewCard(review) {
+    const userReviewCard = document.getElementById('user-review-card');
+    const starsEl = document.getElementById('user-review-stars');
+    const titleEl = document.getElementById('user-review-title');
+    const bodyEl = document.getElementById('user-review-body');
+    const dateEl = document.getElementById('user-review-date');
 
-      deleteBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          console.log('Delete button clicked');
-          const reviewId = this.getAttribute('data-review-id');
-          window.deleteReview(reviewId);
-        });
-      });
-    }, 0);
+    // Normalize field names
+    const score = review.rating || review.score;
+    const body = review.comment || review.body;
+    const title = review.title || '';
+
+    starsEl.innerHTML = generateStars(score);
+    titleEl.textContent = title;
+    bodyEl.textContent = body;
+    dateEl.textContent = formatDate(review.created_at);
+
+    userReviewCard.style.display = 'block';
+
+    // Set up edit and delete button handlers
+    const editBtn = document.getElementById('edit-user-review-btn');
+    const deleteBtn = document.getElementById('delete-user-review-btn');
+
+    editBtn.onclick = () => editReview(review.id, title, body, score);
+    deleteBtn.onclick = () => deleteReview(review.id);
   }
 
   // Update reviews summary (average rating)
@@ -405,7 +435,7 @@
 
     // API returns 'rating', fallback to 'score' for consistency
     const avgRating = reviews.reduce((sum, r) => sum + (r.rating || r.score), 0) / reviews.length;
-    
+
     summaryEl.style.display = 'block';
     avgRatingEl.textContent = avgRating.toFixed(1);
     avgStarsEl.innerHTML = generateStars(avgRating);
@@ -422,7 +452,7 @@
     for (let i = 0; i < fullStars; i++) html += '<span class="star filled">★</span>';
     if (hasHalfStar) html += '<span class="star half">★</span>';
     for (let i = 0; i < emptyStars; i++) html += '<span class="star empty">☆</span>';
-    
+
     return html;
   }
 
@@ -438,16 +468,36 @@
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    
+
     return date.toLocaleDateString();
   }
 
   let editingReviewId = null;
 
+  // Update review form visibility based on whether user has already reviewed
+  function updateReviewFormVisibility() {
+    const formContainer = document.querySelector('.review-form-container');
+    const formTitle = document.getElementById('review-form-title');
+    
+    if (hasUserReviewed && editingReviewId === null) {
+      // User has already reviewed and is not editing - hide form
+      if (formContainer) formContainer.style.display = 'none';
+    } else {
+      // User hasn't reviewed yet or is editing - show form
+      if (formContainer) formContainer.style.display = 'block';
+      if (formTitle && editingReviewId === null) {
+        formTitle.textContent = 'Write a Review';
+      }
+    }
+  }
+
   // Edit review
   window.editReview = function(reviewId, title, body, score) {
     console.log('editReview called with:', { reviewId, title, body, score });
     editingReviewId = reviewId;
+    
+    // Show the form when editing
+    updateReviewFormVisibility();
     
     // Populate form with review data
     const titleInput = document.getElementById('review-title');
@@ -459,14 +509,12 @@
     if (titleInput) titleInput.value = title;
     if (commentInput) commentInput.value = body;
     if (ratingInput) ratingInput.checked = true;
-    
+
     // Change form title and button text
     const formTitle = document.querySelector('.review-form-container h3');
     const submitBtn = document.querySelector('#review-form button[type="submit"]');
     formTitle.textContent = 'Edit Your Review';
-    submitBtn.textContent = 'Update Review';
-    
-    // Add cancel button
+    submitBtn.textContent = 'Update Review';    // Add cancel button
     if (!document.getElementById('cancel-edit-btn')) {
       const cancelBtn = document.createElement('button');
       cancelBtn.type = 'button';
@@ -476,7 +524,7 @@
       cancelBtn.onclick = cancelEditReview;
       submitBtn.parentElement.appendChild(cancelBtn);
     }
-    
+
     // Scroll to form
     document.querySelector('.review-form-container').scrollIntoView({ behavior: 'smooth' });
   };
@@ -485,18 +533,21 @@
   function cancelEditReview() {
     editingReviewId = null;
     document.getElementById('review-form').reset();
-    
+
     const formTitle = document.querySelector('.review-form-container h3');
     const submitBtn = document.querySelector('#review-form button[type="submit"]');
     formTitle.textContent = 'Write a Review';
     submitBtn.textContent = 'Submit Review';
-    
+
     const cancelBtn = document.getElementById('cancel-edit-btn');
     if (cancelBtn) cancelBtn.remove();
+    
+    // Hide form again if user has already reviewed
+    updateReviewFormVisibility();
   }
 
   // Delete review
-  window.deleteReview = async function(reviewId) {
+  window.deleteReview = async function (reviewId) {
     if (!confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
       return;
     }
@@ -526,7 +577,7 @@
   // Handle review form submission
   document.getElementById('review-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const rating = document.querySelector('input[name="rating"]:checked');
     const title = document.getElementById('review-title').value;
     const comment = document.getElementById('review-comment').value;
@@ -541,7 +592,7 @@
       const isEditing = editingReviewId !== null;
       const url = isEditing ? `${API_BASE}/reviews/${editingReviewId}` : `${API_BASE}/reviews`;
       const method = isEditing ? 'PUT' : 'POST';
-      
+
       // Different field names for create vs update
       const requestBody = isEditing ? {
         score: parseInt(rating.value),
@@ -553,7 +604,7 @@
         title: title.trim(),
         comment: comment.trim()
       };
-      
+
       const response = await fetch(url, {
         method: method,
         headers: {
@@ -568,7 +619,13 @@
       if (response.ok) {
         showReviewMessage(isEditing ? 'Review updated successfully!' : 'Review submitted successfully!', 'success');
         document.getElementById('review-form').reset();
-        cancelEditReview();
+        if (isEditing) {
+          cancelEditReview();
+        } else {
+          // Mark that user has now reviewed
+          hasUserReviewed = true;
+          updateReviewFormVisibility();
+        }
         // Reload reviews
         setTimeout(() => {
           loadReviews(eventId);
@@ -632,7 +689,7 @@
   // Handle bookmark button click
   document.getElementById('bookmark-btn').addEventListener('click', async () => {
     const btn = document.getElementById('bookmark-btn');
-    
+
     // Disable button during request
     btn.disabled = true;
 
@@ -696,7 +753,7 @@
     document.body.appendChild(notification);
 
     setTimeout(() => notification.classList.add('show'), 10);
-    
+
     setTimeout(() => {
       notification.classList.remove('show');
       setTimeout(() => notification.remove(), 300);
