@@ -4,10 +4,22 @@ from project.models import db, EventTag
 
 event_tag_bp = Blueprint("event_tag", __name__)
 
-# GET all event-tags
+# GET event-tags (optionally filtered by event_id or event_identifier)
 @event_tag_bp.route("/event-tags", methods=["GET"])
 def get_event_tags():
-    tags = EventTag.query.all()
+    event_id = request.args.get("event_id")
+    event_identifier = request.args.get("event_identifier")
+    
+    # Build query with filters if provided
+    query = EventTag.query
+    
+    if event_id:
+        query = query.filter_by(event_id=int(event_id))
+    
+    if event_identifier:
+        query = query.filter_by(event_identifier=event_identifier)
+    
+    tags = query.all()
     return jsonify([t.as_dict() for t in tags])
 
 # POST create event-tag

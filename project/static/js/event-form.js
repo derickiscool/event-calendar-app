@@ -345,7 +345,7 @@ async function loadTags() {
     }
 
     allTags = await res.json();
-    renderTags();
+    // Don't render yet - wait for event tags to load in edit mode
 
   } catch (error) {
     console.error('Error loading tags:', error);
@@ -372,16 +372,18 @@ function renderTags() {
     chip.type = 'button';
     chip.className = 'tag-chip';
     chip.textContent = tag.tag_name;
-    chip.dataset.tagId = tag.id;
+    // Ensure tag ID is a number for consistent comparison
+    const tagId = parseInt(tag.id, 10);
+    chip.dataset.tagId = tagId;
 
     // Set selected state
-    if (selectedTags.has(tag.id)) {
+    if (selectedTags.has(tagId)) {
       chip.classList.add('selected');
     }
 
     // Handle click
     chip.addEventListener('click', () => {
-      toggleTag(tag.id);
+      toggleTag(tagId);
     });
 
     container.appendChild(chip);
@@ -492,9 +494,15 @@ async function loadEventTags(eventId) {
 
     const eventTags = await res.json();
 
-    // Add tag IDs to selectedTags
+    // Clear selectedTags first to avoid stale data
+    selectedTags.clear();
+
+    // Add tag IDs to selectedTags (ensure consistent number type)
     eventTags.forEach(eventTag => {
-      selectedTags.add(eventTag.tag_id);
+      const tagId = parseInt(eventTag.tag_id, 10);
+      if (!isNaN(tagId)) {
+        selectedTags.add(tagId);
+      }
     });
 
     // Re-render tags with selected state
@@ -660,7 +668,7 @@ async function deleteEvent(eventId) {
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load tags first
+  // Load tags first (but don't render yet)
   await loadTags();
 
   // If edit mode, load event data and event tags
@@ -669,6 +677,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (eventId) {
       await loadEventTags(eventId);
     }
+  } else {
+    // In create mode, render tags now (selectedTags will be empty)
+    renderTags();
   }
 
   // Character count update

@@ -94,6 +94,7 @@ def get_all_events():
     """
     # Get query parameters
     category = request.args.get('category', 'all')
+    source_filter = request.args.get('source', 'all')  # 'all', 'official', or 'community'
     search_query = request.args.get('q', '').lower()
     
     all_events = []
@@ -110,7 +111,7 @@ def get_all_events():
             for event in mongo_events:
                 try:
                     # Transform MongoDB event to unified format
-                    category = _categorize_event(event.get('title', '') + ' ' + event.get('description', ''))
+                    event_category = _categorize_event(event.get('title', '') + ' ' + event.get('description', ''))
                     unified_event = {
                         'id': f"official_{str(event['_id'])}",
                         'title': event.get('title', 'Untitled Event'),
@@ -121,12 +122,12 @@ def get_all_events():
                         'venue': event.get('venue_name', 'Venue TBA'),
                         'location': event.get('address', ''),
                         'image': event.get('image_url', ''),
-                        'category': category,
+                        'category': event_category,
                         'source': 'official',
                         'source_label': 'Official Event',
                         'registration_link': event.get('registration_link', ''),
                         'external_source': event.get('source', ''),
-                        'tags': [category] if category else []  # Include category as a tag for search
+                        'tags': [event_category] if event_category else []  # Include category as a tag for search
                     }
                     all_events.append(unified_event)
                 except Exception as inner_e:
@@ -191,6 +192,10 @@ def get_all_events():
     
     # 3. Apply filters
     filtered_events = all_events
+    
+    # Filter by source (official/community)
+    if source_filter != 'all':
+        filtered_events = [e for e in filtered_events if e.get('source') == source_filter]
     
     # Filter by category
     if category != 'all':

@@ -121,7 +121,8 @@
     hidePagination();
 
     try {
-      const response = await fetchAllEvents(state.cat, state.q);
+      // Fetch all events without category filter - we'll filter on frontend
+      const response = await fetchAllEvents('all', state.q);
 
       if (response.status === 'success') {
         state.allEvents = response.events;
@@ -130,7 +131,7 @@
         // Update stats display if exists
         updateStats(response);
 
-        // Apply source filter
+        // Apply source and category filters on frontend
         applyFilters();
       }
     } catch (error) {
@@ -216,16 +217,51 @@
     // Apply source filter to allEvents (official or community)
     let filtered = state.allEvents.filter(event => event.source === state.source);
     
-    // If "My Preferences" filter is active and user has preferences, filter by preferred categories
+    // Apply category filter
     if (state.cat === 'preferences' && state.userPreferences.length > 0) {
+      // Filter by user's preferred tags
       filtered = filtered.filter(event => {
-        if (!event.category) return false;
-        // Normalize category for comparison (handle "visual-arts" vs "visual arts")
-        const normalizedCategory = event.category.toLowerCase().replace(/\s+/g, '-');
+        // Check if any of the user's preferred tags match the event's tags or category
         return state.userPreferences.some(pref => {
           const normalizedPref = pref.toLowerCase().replace(/\s+/g, '-');
-          return normalizedCategory === normalizedPref;
+          
+          // Check against event's tags array (for community events with custom tags like "Cat", "Dog")
+          if (event.tags && Array.isArray(event.tags)) {
+            const hasMatchingTag = event.tags.some(tag => {
+              const normalizedTag = tag.toLowerCase().replace(/\s+/g, '-');
+              return normalizedTag === normalizedPref;
+            });
+            if (hasMatchingTag) return true;
+          }
+          
+          // Also check against event's category (for official events and mapped categories)
+          if (event.category) {
+            const normalizedCategory = event.category.toLowerCase().replace(/\s+/g, '-');
+            return normalizedCategory === normalizedPref;
+          }
+          
+          return false;
         });
+      });
+    } else if (state.cat !== 'all') {
+      // Filter by specific category (music, theatre, comedy, etc.)
+      filtered = filtered.filter(event => {
+        // Check event's category
+        if (event.category) {
+          const normalizedCategory = event.category.toLowerCase().replace(/\s+/g, '-');
+          if (normalizedCategory === state.cat) return true;
+        }
+        
+        // Also check event's tags array (for community events)
+        // This allows community events with tags like "music", "theatre" to show up
+        if (event.tags && Array.isArray(event.tags)) {
+          return event.tags.some(tag => {
+            const normalizedTag = tag.toLowerCase().replace(/\s+/g, '-');
+            return normalizedTag === state.cat;
+          });
+        }
+        
+        return false;
       });
     }
     
