@@ -303,9 +303,14 @@
       if (response.ok) {
         const data = await response.json();
         currentUserId = data.user.id;
+        console.log('User logged in, ID:', currentUserId);
+      } else {
+        console.log('User not logged in (response status:', response.status, ')');
+        currentUserId = null;
       }
     } catch (err) {
       console.error('Error getting current user:', err);
+      currentUserId = null;
     }
   }
 
@@ -333,11 +338,12 @@
     const otherReviewsTitle = document.getElementById('other-reviews-title');
 
     console.log('Displaying reviews:', reviews);
+    console.log('Current user ID:', currentUserId);
 
     // Separate user's review from others
     let userReview = null;
     let otherReviews = [];
-    
+
     if (currentUserId && reviews && reviews.length > 0) {
       userReview = reviews.find(review => review.user_id === currentUserId);
       otherReviews = reviews.filter(review => review.user_id !== currentUserId);
@@ -345,9 +351,9 @@
       otherReviews = reviews || [];
     }
 
-    hasUserReviewed = userReview !== null;
-    
-    // Display user's review in pinned card
+    hasUserReviewed = !!userReview; // Convert to boolean (undefined or null becomes false)
+    console.log('User review found:', userReview);
+    console.log('Has user reviewed:', hasUserReviewed);    // Display user's review in pinned card
     if (userReview) {
       displayUserReviewCard(userReview);
       otherReviewsTitle.textContent = 'Other Reviews';
@@ -355,7 +361,7 @@
       userReviewCard.style.display = 'none';
       otherReviewsTitle.textContent = 'Reviews';
     }
-    
+
     updateReviewFormVisibility();
 
     // Display other reviews
@@ -478,12 +484,21 @@
   function updateReviewFormVisibility() {
     const formContainer = document.querySelector('.review-form-container');
     const formTitle = document.getElementById('review-form-title');
-    
-    if (hasUserReviewed && editingReviewId === null) {
-      // User has already reviewed and is not editing - hide form
+
+    console.log('updateReviewFormVisibility called');
+    console.log('currentUserId:', currentUserId);
+    console.log('hasUserReviewed:', hasUserReviewed);
+    console.log('editingReviewId:', editingReviewId);
+    console.log('formContainer:', formContainer);
+
+    // Only hide form if user is logged in AND has already reviewed AND not editing
+    if (currentUserId && hasUserReviewed && editingReviewId === null) {
+      // User is logged in, has already reviewed, and is not editing - hide form
+      console.log('Hiding form - user already reviewed');
       if (formContainer) formContainer.style.display = 'none';
     } else {
-      // User hasn't reviewed yet or is editing - show form
+      // User hasn't reviewed yet or is editing or not logged in - show form
+      console.log('Showing form - user has not reviewed or is editing or not logged in');
       if (formContainer) formContainer.style.display = 'block';
       if (formTitle && editingReviewId === null) {
         formTitle.textContent = 'Write a Review';
@@ -492,20 +507,20 @@
   }
 
   // Edit review
-  window.editReview = function(reviewId, title, body, score) {
+  window.editReview = function (reviewId, title, body, score) {
     console.log('editReview called with:', { reviewId, title, body, score });
     editingReviewId = reviewId;
-    
+
     // Show the form when editing
     updateReviewFormVisibility();
-    
+
     // Populate form with review data
     const titleInput = document.getElementById('review-title');
     const commentInput = document.getElementById('review-comment');
     const ratingInput = document.querySelector(`input[name="rating"][value="${score}"]`);
-    
+
     console.log('Form elements:', { titleInput, commentInput, ratingInput });
-    
+
     if (titleInput) titleInput.value = title;
     if (commentInput) commentInput.value = body;
     if (ratingInput) ratingInput.checked = true;
@@ -541,7 +556,7 @@
 
     const cancelBtn = document.getElementById('cancel-edit-btn');
     if (cancelBtn) cancelBtn.remove();
-    
+
     // Hide form again if user has already reviewed
     updateReviewFormVisibility();
   }
@@ -758,6 +773,12 @@
       notification.classList.remove('show');
       setTimeout(() => notification.remove(), 300);
     }, 3000);
+  }
+
+  // Ensure form is visible on load (will be hidden later if user already reviewed)
+  const initialFormContainer = document.querySelector('.review-form-container');
+  if (initialFormContainer) {
+    initialFormContainer.style.display = 'block';
   }
 
   // Load reviews when event is loaded

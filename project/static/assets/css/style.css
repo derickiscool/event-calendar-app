@@ -1602,9 +1602,9 @@ select.error:focus {
 /* User Review Card (Pinned) */
 .user-review-card {
   margin-bottom: 2rem;
-  background: linear-gradient(135deg, 
-    color-mix(in srgb, var(--brand) 10%, transparent),
-    color-mix(in srgb, var(--brand) 5%, transparent));
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--brand) 10%, transparent),
+      color-mix(in srgb, var(--brand) 5%, transparent));
   border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
   border-radius: var(--radius);
   padding: 1.5rem;
