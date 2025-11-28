@@ -4,9 +4,14 @@
 {% block content %}
 <style>
     /* --- COLOR & CONTRAST OVERRIDES --- */
-    .text-gray-300 { color: #cbd5e1 !important; }
-    .text-gray-400 { color: #94a3b8 !important; }
-    
+    .text-gray-300 {
+        color: #cbd5e1 !important;
+    }
+
+    .text-gray-400 {
+        color: #94a3b8 !important;
+    }
+
     /* Search Bar Contrast */
     .control-deck {
         background: rgba(30, 41, 59, 0.6);
@@ -15,23 +20,31 @@
         border-radius: 16px;
         padding: 1.5rem;
     }
-    
+
     .search-input-group {
         background-color: #020617;
         border: 1px solid #334155;
         border-radius: 50px;
     }
+
     .search-input-group input {
         color: #fff !important;
         font-weight: 500;
     }
+
     .search-input-group input::placeholder {
         color: #64748b;
     }
 
     /* Segmented Control */
-    .segmented-btn { color: #94a3b8; }
-    .segmented-btn:hover { color: #fff; }
+    .segmented-btn {
+        color: #94a3b8;
+    }
+
+    .segmented-btn:hover {
+        color: #fff;
+    }
+
     .segmented-btn.active {
         background-color: #334155;
         color: #fff;
@@ -40,25 +53,57 @@
 
     /* --- SCROLLABLE CATEGORIES FIX --- */
     .category-scroll-wrapper {
-        /* Enable Horizontal Scroll */
+        display: flex;
+        /* Enforce flexbox */
+        flex-wrap: nowrap;
+        /* Prevent wrapping to next line */
         overflow-x: auto;
-        /* Smooth scrolling on mobile */
-        -webkit-overflow-scrolling: touch; 
-        /* Hide scrollbar for cleaner look (optional) */
-        scrollbar-width: none; 
-        -ms-overflow-style: none;
-        padding-bottom: 5px; /* Space for scrollbar if visible */
+        /* Allow horizontal scroll */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scroll on mobile */
+        gap: 0.5rem;
+        /* Space between buttons */
+        padding-bottom: 8px;
+        /* Space for scrollbar */
+        margin-bottom: 0px;
+        white-space: nowrap;
+        /* Ensure text doesn't wrap */
+        width: 100%;
+        /* Full width of parent */
     }
-    .category-scroll-wrapper::-webkit-scrollbar { 
-        display: none; 
+
+    /* Custom Scrollbar Styling (Thin & Dark) */
+    .category-scroll-wrapper::-webkit-scrollbar {
+        height: 6px;
+        /* Visible but thin height */
+        display: block;
+        /* Ensure it's visible on desktop */
     }
-    
+
+    .category-scroll-wrapper::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        /* Very subtle track */
+        border-radius: 3px;
+    }
+
+    .category-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        /* Subtle thumb */
+        border-radius: 3px;
+    }
+
+    .category-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.4);
+        /* Brighter on hover */
+    }
+
     /* Stats & Guide */
     .source-guide {
         background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255,255,255,0.05);
+        border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 12px;
     }
+
     .source-item {
         display: flex;
         align-items: center;
@@ -66,7 +111,11 @@
         border-radius: 8px;
         transition: background 0.2s;
     }
-    .source-item:hover { background: rgba(255,255,255,0.03); }
+
+    .source-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
     .stat-badge {
         font-size: 0.75rem;
         font-weight: 700;
@@ -77,26 +126,41 @@
 
     /* Cards */
     .event-card {
-        background-color: #1e293b; 
+        background-color: #1e293b;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         transition: transform 0.2s, box-shadow 0.2s;
     }
+
     .event-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
         border-color: rgba(59, 130, 246, 0.5);
     }
+
     .badge-float {
         position: absolute;
-        top: 12px; right: 12px;
-        font-size: 0.7rem; font-weight: 700;
-        padding: 6px 12px; border-radius: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;
+        top: 12px;
+        right: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-    .badge-official { background-color: #22d3ee; color: #0f172a; }
-    .badge-community { background-color: #4ade80; color: #0f172a; }
+
+    .badge-official {
+        background-color: #22d3ee;
+        color: #0f172a;
+    }
+
+    .badge-community {
+        background-color: #4ade80;
+        color: #0f172a;
+    }
 </style>
 
 <div class="container pt-5 pb-4">
@@ -107,7 +171,8 @@
         </div>
         <div class="col-lg-5 text-lg-end">
             <div class="d-inline-block text-end">
-                <span class="text-gray-400 small text-uppercase fw-bold" style="letter-spacing: 1px;">Total Events</span>
+                <span class="text-gray-400 small text-uppercase fw-bold" style="letter-spacing: 1px;">Total
+                    Events</span>
                 <div class="display-6 fw-bold text-white lh-1" id="stat-total">0</div>
             </div>
         </div>
@@ -118,25 +183,32 @@
             <div class="col-md-6 border-end border-secondary border-opacity-25">
                 <div class="source-item me-md-2">
                     <div class="d-flex align-items-center">
-                        <span class="badge bg-info text-dark rounded-circle me-3" style="width:12px; height:12px; padding:0;"></span>
+                        <span class="badge bg-info text-dark rounded-circle me-3"
+                            style="width:12px; height:12px; padding:0;"></span>
                         <div class="d-flex flex-column">
                             <span class="text-white fw-bold">Official Sources</span>
-                            <span class="text-gray-400 small" style="font-size: 0.75rem;">Aggregated from ArtsRepublic, EventFinda & Gov.sg</span>
+                            <span class="text-gray-400 small" style="font-size: 0.75rem;">Aggregated from ArtsRepublic,
+                                EventFinda & Gov.sg</span>
                         </div>
                     </div>
-                    <span class="stat-badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" id="stat-official">0</span>
+                    <span class="stat-badge bg-info bg-opacity-10 text-info border border-info border-opacity-25"
+                        id="stat-official">0</span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="source-item ms-md-2">
                     <div class="d-flex align-items-center">
-                        <span class="badge bg-success text-dark rounded-circle me-3" style="width:12px; height:12px; padding:0;"></span>
+                        <span class="badge bg-success text-dark rounded-circle me-3"
+                            style="width:12px; height:12px; padding:0;"></span>
                         <div class="d-flex flex-column">
                             <span class="text-white fw-bold">Community</span>
-                            <span class="text-gray-400 small" style="font-size: 0.75rem;">User-submitted local gigs, workshops, and meetups</span>
+                            <span class="text-gray-400 small" style="font-size: 0.75rem;">User-submitted local gigs,
+                                workshops, and meetups</span>
                         </div>
                     </div>
-                    <span class="stat-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" id="stat-community">0</span>
+                    <span
+                        class="stat-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"
+                        id="stat-community">0</span>
                 </div>
             </div>
         </div>
@@ -147,27 +219,49 @@
 
     <div class="control-deck mb-5 shadow-lg">
         <div class="row g-3 align-items-center">
-            
+
             <div class="col-lg-6">
                 <div class="input-group search-input-group">
-                    <span class="input-group-text bg-transparent border-0 ps-3"><i class="bi bi-search text-gray-400"></i></span>
-                    <input type="text" class="form-control border-0 bg-transparent" id="searchInput" placeholder="Search events...">
+                    <span class="input-group-text bg-transparent border-0 ps-3"><i
+                            class="bi bi-search text-gray-400"></i></span>
+                    <input type="text" class="form-control border-0 bg-transparent" id="searchInput"
+                        placeholder="Search events...">
                 </div>
             </div>
 
             <div class="col-lg-6 text-center text-lg-end">
                 <div class="segmented-control d-inline-flex bg-dark rounded-pill p-1 border border-secondary">
-                    <button class="segmented-btn btn btn-sm rounded-pill px-3 active" onclick="setSource('all')" id="btn-all">All</button>
-                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('official')" id="btn-official">Official</button>
-                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('community')" id="btn-community">Community</button>
+                    <button class="segmented-btn btn btn-sm rounded-pill px-3 active" onclick="setSource('all')"
+                        id="btn-all">All</button>
+                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('official')"
+                        id="btn-official">Official</button>
+                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('community')"
+                        id="btn-community">Community</button>
                 </div>
             </div>
-            
+
             <div class="col-12 mt-3">
                 <div id="category-scroll-container" class="category-scroll-wrapper d-flex gap-2 text-nowrap">
-                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 active-category flex-shrink-0" onclick="setCategory('all', this)">All</button>
-                    <button id="btn-preferences" class="btn btn-sm btn-outline-warning rounded-pill px-3 flex-shrink-0" onclick="setCategory('preferences', this)">♥ For You</button>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 active-category flex-shrink-0"
+                        onclick="setCategory('all', this)">All</button>
+                    <button id="btn-preferences"
+                        class="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0"
+                        onclick="setCategory('preferences', this)">♥ For You</button>
+                </div>
+            </div>
+
+            <div class="col-12" id="active-filter-row" style="display: none;">
+                <div
+                    class="alert bg-black bg-opacity-25 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between py-2 px-3 mt-2 mb-0 rounded-3">
+                    <div class="d-flex align-items-center text-gray-300 small">
+                        <i class="bi bi-sliders2 me-2 text-primary"></i>
+                        <span id="filter-info-text">Filtering...</span>
                     </div>
+                    <a href="{{ url_for('main.profile') }}"
+                        class="btn btn-sm btn-outline-secondary border-0 text-gray-400 py-0" style="font-size: 0.8rem;">
+                        <i class="bi bi-pencil-square me-1"></i>Edit Interests
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -210,7 +304,7 @@
     };
 
     async function init() {
-        await loadCategories(); 
+        await loadCategories();
         await loadUserPreferences();
         await fetchEvents();
 
@@ -225,100 +319,119 @@
             const res = await fetch('/api/tags');
             const tags = await res.json();
             const container = document.getElementById('category-scroll-container');
-            
+
             // Sort alphabetically
             tags.sort((a, b) => a.tag_name.localeCompare(b.tag_name));
 
             tags.forEach(tag => {
                 const btn = document.createElement('button');
-                btn.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0'; // Added flex-shrink-0
+                btn.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0';
                 btn.textContent = tag.tag_name;
-                btn.onclick = function() { setCategory(tag.tag_name, this); };
+                btn.onclick = function () { setCategory(tag.tag_name, this); };
                 container.appendChild(btn);
             });
-        } catch(e) { console.error("Failed to load tags", e); }
+        } catch (e) { console.error("Failed to load tags", e); }
     }
 
     async function loadUserPreferences() {
         try {
             const res = await fetch('/api/preferences/me');
-            if(res.ok) {
+            if (res.ok) {
                 const data = await res.json();
                 state.userPreferences = data.tags.map(t => t.tag_name);
-                
+
                 // Update button text
                 const btn = document.getElementById('btn-preferences');
-                if(btn) {
+                if (btn) {
                     btn.textContent = `♥ For You (${state.userPreferences.length})`;
                 }
             }
-        } catch(e) {}
+        } catch (e) { }
     }
 
-    window.setCategory = function(cat, btnElement) {
+    window.setCategory = function (cat, btnElement) {
         state.filters.category = cat;
         const container = document.getElementById('category-scroll-container');
-        
-        // Reset styles
+
+        // Reset ALL buttons to default outline style
         Array.from(container.children).forEach(child => {
-            child.classList.remove('active-category', 'bg-light', 'text-dark');
-            child.classList.add('btn-outline-secondary');
+            child.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0';
         });
-        
-        // Specific styling for 'For You' vs others
-        if(cat === 'preferences') {
-            btnElement.classList.remove('btn-outline-secondary'); // Remove outline from 'For You'
-            btnElement.classList.add('active-category', 'bg-warning', 'text-dark', 'border-warning'); // Make it yellow
-        } else {
-            btnElement.classList.remove('btn-outline-secondary');
-            btnElement.classList.add('active-category', 'bg-light', 'text-dark');
-        }
-        
+
+        // Apply "Active" style (White Background) to the clicked button
+        // This is now consistent for ALL categories, including "For You"
+        btnElement.classList.remove('btn-outline-secondary');
+        btnElement.classList.add('active-category', 'bg-light', 'text-dark', 'fw-bold');
+
         applyFilters();
     };
 
-    window.setSource = function(source) {
+    window.setSource = function (source) {
         state.filters.source = source;
         document.querySelectorAll('.segmented-btn').forEach(btn => btn.classList.remove('active'));
-        if(source === 'all') document.getElementById('btn-all').classList.add('active');
-        if(source === 'official') document.getElementById('btn-official').classList.add('active');
-        if(source === 'community') document.getElementById('btn-community').classList.add('active');
+        if (source === 'all') document.getElementById('btn-all').classList.add('active');
+        if (source === 'official') document.getElementById('btn-official').classList.add('active');
+        if (source === 'community') document.getElementById('btn-community').classList.add('active');
         applyFilters();
     }
 
     function applyFilters() {
-        // Handle "For You" with 0 tags (The UX Fix)
-        if(state.filters.category === 'preferences' && state.userPreferences.length === 0) {
-            showEmptyState("No interests selected", "You haven't set your interests yet. Go to your profile to personalize your feed.", true);
-            return;
+        const row = document.getElementById('active-filter-row');
+        const infoText = document.getElementById('filter-info-text');
+
+        // 1. Handle "For You" mode logic
+        if (state.filters.category === 'preferences') {
+            // Case A: User has NO preferences set -> Show "No Interests" Empty State
+            if (!state.userPreferences || state.userPreferences.length === 0) {
+                if (row) row.style.setProperty('display', 'none', 'important');
+                showEmptyState(
+                    "No interests selected",
+                    "You haven't set your interests yet. Go to your profile to personalize your feed.",
+                    true
+                );
+                return; // Stop here
+            }
+
+            // Case B: User HAS preferences -> Show the Info Box
+            const prefsString = state.userPreferences.join(', ');
+            if (infoText) infoText.innerHTML = `Showing events for: <strong class="text-white">${prefsString}</strong>`;
+
+            // Force display block
+            if (row) row.style.setProperty('display', 'block', 'important');
+
+        } else {
+            // 2. Handle ANY other mode -> HIDE the box
+            if (row) row.style.setProperty('display', 'none', 'important');
         }
 
-        let results = state.allEvents;
+        // --- Filtering Logic ---
+        let results = state.allEvents || [];
 
         // Source Filter
-        if(state.filters.source !== 'all') {
+        if (state.filters.source !== 'all') {
             results = results.filter(e => e.source === state.filters.source);
         }
 
         // Category Filter
-        if(state.filters.category === 'preferences') {
+        if (state.filters.category === 'preferences') {
             results = results.filter(e => {
-                if(e.category && state.userPreferences.includes(e.category)) return true;
-                if(e.tags && e.tags.some(t => state.userPreferences.includes(t))) return true;
+                if (e.category && state.userPreferences.includes(e.category)) return true;
+                if (e.tags && Array.isArray(e.tags)) {
+                    return e.tags.some(t => state.userPreferences.includes(t));
+                }
                 return false;
             });
-        } else if(state.filters.category !== 'all') {
+        } else if (state.filters.category !== 'all') {
             results = results.filter(e => {
-                // Check mapped category OR tags array
                 return e.category === state.filters.category || (e.tags && e.tags.includes(state.filters.category));
             });
         }
 
         // Search Filter
-        if(state.filters.search) {
+        if (state.filters.search) {
             const term = state.filters.search.toLowerCase();
-            results = results.filter(e => 
-                (e.title && e.title.toLowerCase().includes(term)) || 
+            results = results.filter(e =>
+                (e.title && e.title.toLowerCase().includes(term)) ||
                 (e.venue && e.venue.toLowerCase().includes(term))
             );
         }
@@ -336,15 +449,15 @@
         try {
             const res = await fetch(`/api/all-events?source=all&category=all`);
             const data = await res.json();
-            
-            if(data.status === 'success') {
+
+            if (data.status === 'success') {
                 state.allEvents = data.events;
                 document.getElementById('stat-total').textContent = data.total;
                 document.getElementById('stat-official').textContent = data.official_count;
                 document.getElementById('stat-community').textContent = data.community_count;
                 applyFilters();
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         } finally {
             loader.style.display = 'none';
@@ -357,14 +470,14 @@
         const empty = document.getElementById('emptyState');
         grid.innerHTML = '';
 
-        if(state.filteredEvents.length === 0) {
-            // Default empty state
+        // FIX: Removed the check for 'preferences'. Now shows empty state for ANY category with 0 results.
+        if (state.filteredEvents.length === 0) {
             showEmptyState("No events found", "We couldn't find anything matching your filters.", false);
             return;
         }
-        
+
         empty.style.display = 'none';
-        document.getElementById('pagination').innerHTML = ''; // Clear old
+        document.getElementById('pagination').innerHTML = '';
 
         const start = (state.currentPage - 1) * state.itemsPerPage;
         const end = start + state.itemsPerPage;
@@ -376,31 +489,30 @@
 
         renderPagination(Math.ceil(state.filteredEvents.length / state.itemsPerPage));
     }
-
     function showEmptyState(title, desc, isProfileRedirect) {
         document.getElementById('eventsGrid').innerHTML = '';
         document.getElementById('pagination').innerHTML = '';
         const empty = document.getElementById('emptyState');
-        
+
         document.getElementById('empty-title').textContent = title;
         document.getElementById('empty-desc').textContent = desc;
-        
+
         const actionDiv = document.getElementById('empty-action');
-        if(isProfileRedirect) {
-            actionDiv.innerHTML = `<a href="/profile" class="btn btn-warning rounded-pill px-4 text-dark fw-bold">Customize Profile</a>`;
+        if (isProfileRedirect) {
+            // FIX: Changed class to 'btn-primary' (Blue) so it is visible against dark background
+            actionDiv.innerHTML = `<a href="/profile" class="btn btn-primary rounded-pill px-4 fw-bold">Customize Profile</a>`;
         } else {
             actionDiv.innerHTML = `<button class="btn btn-primary rounded-pill px-4" onclick="resetFilters()">View All Events</button>`;
         }
-        
+
         empty.style.display = 'block';
     }
-
-    window.resetFilters = function() {
+    window.resetFilters = function () {
         state.filters.search = '';
         state.filters.category = 'all';
         state.filters.source = 'all';
         document.getElementById('searchInput').value = '';
-        
+
         // Reset category buttons UI
         const container = document.getElementById('category-scroll-container');
         Array.from(container.children).forEach(child => {
@@ -419,7 +531,7 @@
         const img = event.image ? event.image : fallback;
         let badgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
         let badgeText = event.source === 'official' ? 'Official' : 'Community';
-        
+
         return `
         <div class="col">
             <div class="event-card h-100 d-flex flex-column">
@@ -455,16 +567,16 @@
     function renderPagination(totalPages) {
         const pag = document.getElementById('pagination');
         pag.innerHTML = '';
-        if(totalPages <= 1) return;
+        if (totalPages <= 1) return;
 
         let startPage = Math.max(1, state.currentPage - 2);
         let endPage = Math.min(totalPages, startPage + 4);
-        
+
         pag.innerHTML += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
-            <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage-1})">←</button>
+            <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage - 1})">←</button>
         </li>`;
 
-        for(let i = startPage; i <= endPage; i++) {
+        for (let i = startPage; i <= endPage; i++) {
             const isActive = i === state.currentPage;
             const btnClass = isActive ? 'bg-primary border-primary' : 'bg-dark text-white border-secondary';
             pag.innerHTML += `<li class="page-item ${isActive ? 'active' : ''}">
@@ -473,11 +585,11 @@
         }
 
         pag.innerHTML += `<li class="page-item ${state.currentPage === totalPages ? 'disabled' : ''}">
-            <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage+1})">→</button>
+            <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage + 1})">→</button>
         </li>`;
     }
 
-    window.goTo = function(page) {
+    window.goTo = function (page) {
         state.currentPage = page;
         renderPage();
         document.getElementById('eventsGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
