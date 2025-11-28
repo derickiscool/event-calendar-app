@@ -142,6 +142,7 @@ def update_my_profile():
         # Remove avatar
         delete_avatar(session["user_id"])
         profile.avatar_url = None
+        session["avatar_url"] = None
     elif 'avatar' in request.files:
         file = request.files['avatar']
         if file and file.filename:
@@ -169,6 +170,7 @@ def update_my_profile():
             try:
                 avatar_url = save_avatar(file, session["user_id"])
                 profile.avatar_url = avatar_url
+                session["avatar_url"] = avatar_url
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
     

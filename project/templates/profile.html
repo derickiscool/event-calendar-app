@@ -6,18 +6,19 @@
     /* --- DASHBOARD STYLES --- */
     .profile-sidebar-card {
         background: #1e293b;
-        border: 1px solid rgba(255,255,255,0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         text-align: center;
         padding: 2rem;
     }
+
     .profile-main-card {
         background: #1e293b;
-        border: 1px solid rgba(255,255,255,0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         padding: 2rem;
     }
-    
+
     /* Avatar Styling */
     .avatar-wrapper {
         position: relative;
@@ -25,6 +26,7 @@
         height: 120px;
         margin: 0 auto 1.5rem;
     }
+
     .profile-avatar-lg {
         width: 100%;
         height: 100%;
@@ -33,6 +35,7 @@
         border: 4px solid #0f172a;
         box-shadow: 0 0 0 2px #3b82f6;
     }
+
     .avatar-upload-btn {
         position: absolute;
         bottom: 0;
@@ -49,6 +52,7 @@
         cursor: pointer;
         transition: transform 0.2s;
     }
+
     .avatar-upload-btn:hover {
         transform: scale(1.1);
         background: #2563eb;
@@ -62,12 +66,14 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+
     .form-control-dark {
         background-color: #0f172a;
         border: 1px solid #334155;
         color: #e2e8f0;
         padding: 0.75rem 1rem;
     }
+
     .form-control-dark:focus {
         background-color: #0f172a;
         border-color: #3b82f6;
@@ -89,10 +95,12 @@
         gap: 8px;
         user-select: none;
     }
+
     .tag-pill:hover {
         border-color: #475569;
         color: #e2e8f0;
     }
+
     .tag-pill.active {
         background: rgba(59, 130, 246, 0.15);
         border-color: #3b82f6;
@@ -102,15 +110,15 @@
 
 <div class="container py-5">
     <div class="row g-4">
-        
+
         <!-- LEFT: Identity Sidebar -->
         <div class="col-lg-4">
             <div class="profile-sidebar-card h-100">
                 <!-- Avatar -->
                 <div class="avatar-wrapper">
-                    <img id="display-avatar" src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff" 
-                         alt="Profile" class="profile-avatar-lg">
-                    
+                    <img id="display-avatar" src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff"
+                        alt="Profile" class="profile-avatar-lg">
+
                     <!-- File Input triggers form change event -->
                     <label for="avatar-input" class="avatar-upload-btn" title="Change Photo">
                         <i class="bi bi-camera-fill small"></i>
@@ -119,7 +127,7 @@
 
                 <h3 id="display-username" class="text-white fw-bold mb-1">...</h3>
                 <p id="display-email" class="text-secondary small mb-4">...</p>
-                
+
                 <div class="d-grid gap-2">
                     <button class="btn btn-outline-danger btn-sm" onclick="handleDeleteAccount()">
                         <i class="bi bi-trash3 me-2"></i> Delete Account
@@ -131,11 +139,12 @@
         <!-- RIGHT: Settings Form -->
         <div class="col-lg-8">
             <div class="profile-main-card">
-                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-3 border-opacity-25">Profile Details</h4>
-                
+                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-3 border-opacity-25">Profile
+                    Details</h4>
+
                 <!-- ID: profile-form -->
                 <form id="profile-form">
-                    
+
                     <!-- HIDDEN AVATAR INPUT (Moved inside form so FormData catches it) -->
                     <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display: none;">
 
@@ -148,33 +157,38 @@
                             <label class="form-label-custom">Last Name</label>
                             <input type="text" class="form-control form-control-dark rounded-3" id="lname" name="lname">
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label-custom">Phone Number</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-dark border-secondary text-secondary">+65</span>
-                                <input type="tel" class="form-control form-control-dark" id="phone" name="phone" maxlength="8" placeholder="81234567">
+                                <input type="tel" class="form-control form-control-dark" id="phone" name="phone"
+                                    maxlength="8" placeholder="81234567">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-custom">Postal Code</label>
-                            <input type="text" class="form-control form-control-dark rounded-3" id="postal" name="postal_code" maxlength="6">
+                            <input type="text" class="form-control form-control-dark rounded-3" id="postal"
+                                name="postal_code" maxlength="6">
                         </div>
                     </div>
 
                     <!-- Preferences -->
                     <div class="mt-5">
                         <h5 class="text-white fw-bold mb-3">Event Preferences</h5>
-                        <p class="text-secondary small mb-3">Select the categories you want to see on your home feed.</p>
-                        
+                        <p class="text-secondary small mb-3">Select the categories you want to see on your home feed.
+                        </p>
+
                         <div id="tags-container" class="d-flex flex-wrap gap-2">
                             <span class="text-muted small">Loading tags...</span>
                         </div>
                     </div>
 
                     <!-- Actions -->
-                    <div class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-3">
-                        <button type="button" class="btn btn-outline-light rounded-pill px-4" onclick="window.location.reload()">Cancel</button>
+                    <div
+                        class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-3">
+                        <button type="button" class="btn btn-outline-light rounded-pill px-4"
+                            onclick="window.location.reload()">Cancel</button>
                         <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold" id="save-btn">
                             Save Changes
                         </button>
@@ -187,7 +201,8 @@
 
 <!-- Notification Toast -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
+        aria-atomic="true">
         <div class="d-flex">
             <div class="toast-body" id="toast-message">Update successful</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -212,9 +227,9 @@
     async function loadProfile() {
         try {
             const res = await fetch(`${API_BASE}/profile/me`);
-            if(!res.ok) throw new Error('Failed to load');
+            if (!res.ok) throw new Error('Failed to load');
             const data = await res.json();
-            
+
             // Your backend structure: { "user": {...}, "profile": {...} }
             const u = data.user;
             const p = data.profile;
@@ -222,9 +237,9 @@
             // Identity Sidebar
             document.getElementById('display-username').textContent = u.username || 'User';
             document.getElementById('display-email').textContent = u.email || '';
-            
+
             // Avatar Logic
-            if(p.avatar_url) {
+            if (p.avatar_url) {
                 document.getElementById('display-avatar').src = p.avatar_url;
             } else {
                 const initial = (u.username || 'U').charAt(0).toUpperCase();
@@ -237,7 +252,7 @@
             document.getElementById('phone').value = p.phone || '';
             document.getElementById('postal').value = p.postal_code || '';
 
-        } catch(e) { console.error("Profile load error:", e); }
+        } catch (e) { console.error("Profile load error:", e); }
     }
 
     // --- 2. PREFERENCES (Tags) ---
@@ -245,34 +260,34 @@
         try {
             // Get User Tags
             const resMe = await fetch(`${API_BASE}/preferences/me`);
-            if(resMe.ok) {
+            if (resMe.ok) {
                 const data = await resMe.json();
-                userTags = data.tags.map(t => t.tag_id); 
+                userTags = data.tags.map(t => t.tag_id);
             }
 
             // Get All Tags
             const resAll = await fetch(`${API_BASE}/tags`);
-            if(resAll.ok) {
+            if (resAll.ok) {
                 const data = await resAll.json();
                 allTags = data.tags || data; // Handle array or object wrapper
                 renderTags();
             }
-        } catch(e) { console.error("Tags error:", e); }
+        } catch (e) { console.error("Tags error:", e); }
     }
 
     function renderTags() {
         const container = document.getElementById('tags-container');
         container.innerHTML = '';
-        
+
         allTags.forEach(tag => {
             const isActive = userTags.includes(tag.id);
             const tagName = tag.tag_name || tag.name || 'Tag';
-            
+
             const pill = document.createElement('div');
             pill.className = `tag-pill ${isActive ? 'active' : ''}`;
             pill.innerHTML = `<span>${tagName}</span>`;
-            if(isActive) pill.innerHTML += '<i class="bi bi-check-circle-fill small"></i>';
-            
+            if (isActive) pill.innerHTML += '<i class="bi bi-check-circle-fill small"></i>';
+
             pill.onclick = () => toggleTag(tag.id, pill);
             container.appendChild(pill);
         });
@@ -289,12 +304,12 @@
         try {
             element.classList.toggle('active');
             const spanText = element.querySelector('span').innerText;
-            if(isAdding) element.innerHTML = `<span>${spanText}</span><i class="bi bi-check-circle-fill small"></i>`;
+            if (isAdding) element.innerHTML = `<span>${spanText}</span><i class="bi bi-check-circle-fill small"></i>`;
             else element.innerHTML = `<span>${spanText}</span>`;
 
             const res = await fetch(url, { method: method });
-            if(!res.ok) throw new Error();
-        } catch(e) {
+            if (!res.ok) throw new Error();
+        } catch (e) {
             element.classList.toggle('active'); // Revert
             showToast('Failed to update preference', 'text-bg-danger');
         }
@@ -303,9 +318,9 @@
     // Avatar Preview Handler (Does NOT upload yet, waits for Save)
     document.getElementById('avatar-input').addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if(file) {
+        if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 document.getElementById('display-avatar').src = e.target.result;
                 showToast('Image selected. Click "Save Changes" to apply.', 'text-bg-info');
             };
@@ -328,17 +343,36 @@
                 method: 'PUT',
                 body: formData
             });
-            
+
             const data = await res.json();
-            
-            if(res.ok) {
+
+            if (res.ok) {
                 showToast('Profile updated successfully!', 'text-bg-success');
-                // Reload profile data to confirm sync
+                // --- ADD THIS BLOCK ---
+                // Immediately update navbar image
+                const navImg = document.getElementById('nav-user-img');
+                const navInitial = document.getElementById('nav-user-initial');
+                const newAvatarUrl = data.profile.avatar_url;
+
+                if (newAvatarUrl) {
+                    if (navImg) {
+                        // Update existing image source (add timestamp to bust cache)
+                        navImg.src = newAvatarUrl + '?t=' + new Date().getTime();
+                    } else if (navInitial) {
+                        // If switching from Initials -> Image, we must reload to let Jinja render the <img> tag
+                        window.location.reload();
+                        return;
+                    }
+                } else if (remove_avatar_logic_was_used) {
+                    // (Optional) If removing avatar, reload to show initials
+                    window.location.reload();
+                }
+                // ----------------------
                 await loadProfile();
             } else {
                 showToast(data.error || 'Update failed', 'text-bg-danger');
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             showToast('Server error', 'text-bg-danger');
         } finally {

@@ -148,6 +148,10 @@ def login():
     # Create session
     session["user_id"] = user.id
     session["username"] = user.username
+    if user.profile:
+        session["avatar_url"] = user.profile.avatar_url
+    else:
+        session["avatar_url"] = None
     
     return jsonify({
         "message": "Login successful",
