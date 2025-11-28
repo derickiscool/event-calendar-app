@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 {% block title %}Profile Settings — Event Calendar{% endblock %}
 
@@ -111,15 +112,12 @@
 <div class="container py-5">
     <div class="row g-4">
 
-        <!-- LEFT: Identity Sidebar -->
         <div class="col-lg-4">
             <div class="profile-sidebar-card h-100">
-                <!-- Avatar -->
                 <div class="avatar-wrapper">
                     <img id="display-avatar" src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff"
                         alt="Profile" class="profile-avatar-lg">
 
-                    <!-- File Input triggers form change event -->
                     <label for="avatar-input" class="avatar-upload-btn" title="Change Photo">
                         <i class="bi bi-camera-fill small"></i>
                     </label>
@@ -136,16 +134,13 @@
             </div>
         </div>
 
-        <!-- RIGHT: Settings Form -->
         <div class="col-lg-8">
             <div class="profile-main-card">
                 <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-3 border-opacity-25">Profile
                     Details</h4>
 
-                <!-- ID: profile-form -->
                 <form id="profile-form">
 
-                    <!-- HIDDEN AVATAR INPUT (Moved inside form so FormData catches it) -->
                     <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display: none;">
 
                     <div class="row g-3">
@@ -173,7 +168,6 @@
                         </div>
                     </div>
 
-                    <!-- Preferences -->
                     <div class="mt-5">
                         <h5 class="text-white fw-bold mb-3">Event Preferences</h5>
                         <p class="text-secondary small mb-3">Select the categories you want to see on your home feed.
@@ -184,7 +178,6 @@
                         </div>
                     </div>
 
-                    <!-- Actions -->
                     <div
                         class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-3">
                         <button type="button" class="btn btn-outline-light rounded-pill px-4"
@@ -199,7 +192,6 @@
     </div>
 </div>
 
-<!-- Notification Toast -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
         aria-atomic="true">
@@ -223,14 +215,13 @@
         await loadPreferences();
     });
 
-    // --- 1. LOAD PROFILE (Corrected for your Backend Structure) ---
+    // --- 1. LOAD PROFILE ---
     async function loadProfile() {
         try {
             const res = await fetch(`${API_BASE}/profile/me`);
             if (!res.ok) throw new Error('Failed to load');
             const data = await res.json();
 
-            // Your backend structure: { "user": {...}, "profile": {...} }
             const u = data.user;
             const p = data.profile;
 
@@ -246,7 +237,7 @@
                 document.getElementById('display-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=3b82f6&color=fff&size=128`;
             }
 
-            // Form Fields (Using data.profile)
+            // Form Fields
             document.getElementById('fname').value = p.fname || '';
             document.getElementById('lname').value = p.lname || '';
             document.getElementById('phone').value = p.phone || '';
@@ -258,18 +249,16 @@
     // --- 2. PREFERENCES (Tags) ---
     async function loadPreferences() {
         try {
-            // Get User Tags
             const resMe = await fetch(`${API_BASE}/preferences/me`);
             if (resMe.ok) {
                 const data = await resMe.json();
-                userTags = data.tags.map(t => t.tag_id);
+                userTags = data.preferences.map(p => p.tag_id);
             }
 
-            // Get All Tags
             const resAll = await fetch(`${API_BASE}/tags`);
             if (resAll.ok) {
                 const data = await resAll.json();
-                allTags = data.tags || data; // Handle array or object wrapper
+                allTags = data; 
                 renderTags();
             }
         } catch (e) { console.error("Tags error:", e); }
@@ -295,11 +284,17 @@
 
     // --- 3. INTERACTIONS ---
 
-    // Toggle Tag (Immediate)
     async function toggleTag(tagId, element) {
         const isAdding = !element.classList.contains('active');
         const method = isAdding ? 'POST' : 'DELETE';
-        const url = `${API_BASE}/preferences/${tagId}`;
+        // Handle URL differences: DELETE uses ID in URL, POST uses body
+        const url = isAdding ? `${API_BASE}/preferences/me` : `${API_BASE}/preferences/me/${tagId}`;
+        const options = { method: method };
+        
+        if (isAdding) {
+            options.headers = { 'Content-Type': 'application/json' };
+            options.body = JSON.stringify({ tag_id: tagId });
+        }
 
         try {
             element.classList.toggle('active');
@@ -307,7 +302,7 @@
             if (isAdding) element.innerHTML = `<span>${spanText}</span><i class="bi bi-check-circle-fill small"></i>`;
             else element.innerHTML = `<span>${spanText}</span>`;
 
-            const res = await fetch(url, { method: method });
+            const res = await fetch(url, options);
             if (!res.ok) throw new Error();
         } catch (e) {
             element.classList.toggle('active'); // Revert
@@ -315,7 +310,6 @@
         }
     }
 
-    // Avatar Preview Handler (Does NOT upload yet, waits for Save)
     document.getElementById('avatar-input').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -328,7 +322,6 @@
         }
     });
 
-    // --- 4. MAIN SAVE FUNCTION (Handles Text + Avatar in ONE request) ---
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('save-btn');
@@ -337,7 +330,6 @@
 
         const formData = new FormData(e.target);
 
-        // Your backend route is PUT /profile/me
         try {
             const res = await fetch(`${API_BASE}/profile/me`, {
                 method: 'PUT',
@@ -348,26 +340,21 @@
 
             if (res.ok) {
                 showToast('Profile updated successfully!', 'text-bg-success');
-                // --- ADD THIS BLOCK ---
-                // Immediately update navbar image
+                
+                // Navbar Avatar Update
                 const navImg = document.getElementById('nav-user-img');
                 const navInitial = document.getElementById('nav-user-initial');
                 const newAvatarUrl = data.profile.avatar_url;
 
                 if (newAvatarUrl) {
                     if (navImg) {
-                        // Update existing image source (add timestamp to bust cache)
                         navImg.src = newAvatarUrl + '?t=' + new Date().getTime();
                     } else if (navInitial) {
-                        // If switching from Initials -> Image, we must reload to let Jinja render the <img> tag
                         window.location.reload();
                         return;
                     }
-                } else if (remove_avatar_logic_was_used) {
-                    // (Optional) If removing avatar, reload to show initials
-                    window.location.reload();
                 }
-                // ----------------------
+                
                 await loadProfile();
             } else {
                 showToast(data.error || 'Update failed', 'text-bg-danger');
@@ -380,6 +367,35 @@
             btn.textContent = 'Save Changes';
         }
     });
+
+    // --- DELETE ACCOUNT FUNCTION ---
+    window.handleDeleteAccount = async function() {
+        const confirmMsg = "WARNING: This cannot be undone!\n\nDeleting your account will remove:\n• Your profile\n• All events you created\n• All reviews and bookmarks\n\nAre you absolutely sure?";
+        
+        if (!confirm(confirmMsg)) return;
+        
+        const doubleCheck = confirm("Final Confirmation: Delete account permanently?");
+        if (!doubleCheck) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/delete-account`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                alert('Account deleted. Redirecting to home...');
+                window.location.href = '/';
+            } else {
+                alert(data.message || 'Failed to delete account');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Network error occurred.');
+        }
+    };
 
     function showToast(msg, bgClass) {
         const el = document.getElementById('liveToast');

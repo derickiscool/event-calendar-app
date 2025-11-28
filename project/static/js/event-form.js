@@ -12,7 +12,7 @@ let selectedTags = new Set();
 async function loadEventData() {
   // Get event ID from sessionStorage (set by manage-events page)
   eventId = sessionStorage.getItem('editEventId');
-  
+
   if (!eventId) {
     showFeedback('No event ID provided', 'error');
     setTimeout(() => {
@@ -20,10 +20,10 @@ async function loadEventData() {
     }, 2000); // Give user time to read error message (2 seconds)
     return;
   }
-  
+
   // Clear the sessionStorage after retrieving
   sessionStorage.removeItem('editEventId');
-  
+
   try {
     // Use the secure edit endpoint that checks ownership
     const res = await fetch(`${API_BASE}/events/edit/${eventId}`, {
@@ -49,7 +49,7 @@ async function loadEventData() {
   } catch (error) {
     console.error('Error loading event:', error);
     showFeedback(error.message || 'Failed to load event data', 'error');
-    
+
     // Redirect to manage events after showing error
     setTimeout(() => {
       window.location.href = '/manage-events';
@@ -299,7 +299,7 @@ function handleImageSelect(event) {
 
   // Show preview
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const preview = document.getElementById('image-preview-img');
     if (preview) {
       preview.src = e.target.result;
@@ -760,17 +760,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         endTimeInput.value
       );
 
+      // --- FIX: Clear ALL date/time errors first ---
+      showError('start-date', null);
+      showError('start-time', null);
+      showError('end-date', null);
+      showError('end-time', null);
+      // ---------------------------------------------
+
+      // Then show the specific error if one exists
       if (error) {
         showError(error.field, error.error);
-      } else {
-        showError('start-date', null);
-        showError('start-time', null);
-        showError('end-date', null);
-        showError('end-time', null);
       }
     }
   };
-
   [startDateInput, startTimeInput, endDateInput, endTimeInput].forEach(input => {
     if (input) {
       input.addEventListener('change', validateDateTimes);

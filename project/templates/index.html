@@ -9,7 +9,7 @@
     
     /* Search Bar Contrast */
     .control-deck {
-        background: rgba(30, 41, 59, 0.6); /* Slate 800 */
+        background: rgba(30, 41, 59, 0.6);
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
         border-radius: 16px;
@@ -17,12 +17,12 @@
     }
     
     .search-input-group {
-        background-color: #020617; /* Very dark slate */
+        background-color: #020617;
         border: 1px solid #334155;
         border-radius: 50px;
     }
     .search-input-group input {
-        color: #fff !important; /* Force white text */
+        color: #fff !important;
         font-weight: 500;
     }
     .search-input-group input::placeholder {
@@ -30,19 +30,30 @@
     }
 
     /* Segmented Control */
-    .segmented-btn {
-        color: #94a3b8;
-    }
-    .segmented-btn:hover {
-        color: #fff;
-    }
+    .segmented-btn { color: #94a3b8; }
+    .segmented-btn:hover { color: #fff; }
     .segmented-btn.active {
         background-color: #334155;
         color: #fff;
         font-weight: 600;
     }
 
-    /* --- INFO GUIDE & STATS (Updated) --- */
+    /* --- SCROLLABLE CATEGORIES FIX --- */
+    .category-scroll-wrapper {
+        /* Enable Horizontal Scroll */
+        overflow-x: auto;
+        /* Smooth scrolling on mobile */
+        -webkit-overflow-scrolling: touch; 
+        /* Hide scrollbar for cleaner look (optional) */
+        scrollbar-width: none; 
+        -ms-overflow-style: none;
+        padding-bottom: 5px; /* Space for scrollbar if visible */
+    }
+    .category-scroll-wrapper::-webkit-scrollbar { 
+        display: none; 
+    }
+    
+    /* Stats & Guide */
     .source-guide {
         background: rgba(15, 23, 42, 0.6);
         border: 1px solid rgba(255,255,255,0.05);
@@ -55,18 +66,16 @@
         border-radius: 8px;
         transition: background 0.2s;
     }
-    .source-item:hover {
-        background: rgba(255,255,255,0.03);
-    }
+    .source-item:hover { background: rgba(255,255,255,0.03); }
     .stat-badge {
         font-size: 0.75rem;
         font-weight: 700;
         padding: 4px 10px;
         border-radius: 12px;
-        margin-left: auto; /* Pushes badge to the right */
+        margin-left: auto;
     }
 
-    /* --- EVENT CARD IMPROVEMENTS --- */
+    /* Cards */
     .event-card {
         background-color: #1e293b; 
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -78,34 +87,18 @@
         box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
         border-color: rgba(59, 130, 246, 0.5);
     }
-    
-    /* High Contrast Badges */
     .badge-float {
         position: absolute;
-        top: 12px;
-        right: 12px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 20px;
+        top: 12px; right: 12px;
+        font-size: 0.7rem; font-weight: 700;
+        padding: 6px 12px; border-radius: 20px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        z-index: 2;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .badge-official { background-color: #22d3ee; color: #0f172a; }
     .badge-community { background-color: #4ade80; color: #0f172a; }
-
-    /* Form Select */
-    .form-select-custom {
-        background-color: #020617;
-        color: #fff;
-        border-color: #334155;
-        border-radius: 50px;
-    }
 </style>
 
-<!-- Header & Data Guide -->
 <div class="container pt-5 pb-4">
     <div class="row align-items-end mb-4">
         <div class="col-lg-7">
@@ -120,10 +113,8 @@
         </div>
     </div>
 
-    <!-- NEW: Integrated Source Guide & Stats -->
     <div class="source-guide p-3 mb-2">
         <div class="row g-0">
-            <!-- Official Source -->
             <div class="col-md-6 border-end border-secondary border-opacity-25">
                 <div class="source-item me-md-2">
                     <div class="d-flex align-items-center">
@@ -133,12 +124,9 @@
                             <span class="text-gray-400 small" style="font-size: 0.75rem;">Aggregated from ArtsRepublic, EventFinda & Gov.sg</span>
                         </div>
                     </div>
-                    <!-- LIVE COUNT RESTORED -->
                     <span class="stat-badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" id="stat-official">0</span>
                 </div>
             </div>
-
-            <!-- Community Source -->
             <div class="col-md-6">
                 <div class="source-item ms-md-2">
                     <div class="d-flex align-items-center">
@@ -148,7 +136,6 @@
                             <span class="text-gray-400 small" style="font-size: 0.75rem;">User-submitted local gigs, workshops, and meetups</span>
                         </div>
                     </div>
-                    <!-- LIVE COUNT RESTORED -->
                     <span class="stat-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" id="stat-community">0</span>
                 </div>
             </div>
@@ -156,69 +143,53 @@
     </div>
 </div>
 
-<!-- Main Controls & Grid -->
 <div class="container pb-5">
 
-    <!-- CONTROL DECK -->
     <div class="control-deck mb-5 shadow-lg">
         <div class="row g-3 align-items-center">
             
-            <!-- 1. Search Bar -->
-            <div class="col-lg-5">
+            <div class="col-lg-6">
                 <div class="input-group search-input-group">
                     <span class="input-group-text bg-transparent border-0 ps-3"><i class="bi bi-search text-gray-400"></i></span>
-                    <input type="text" class="form-control border-0 bg-transparent" id="searchInput" placeholder="Search events, venues, keywords...">
+                    <input type="text" class="form-control border-0 bg-transparent" id="searchInput" placeholder="Search events...">
                 </div>
             </div>
 
-            <!-- 2. Source Filters -->
-            <div class="col-lg-4 text-center">
+            <div class="col-lg-6 text-center text-lg-end">
                 <div class="segmented-control d-inline-flex bg-dark rounded-pill p-1 border border-secondary">
                     <button class="segmented-btn btn btn-sm rounded-pill px-3 active" onclick="setSource('all')" id="btn-all">All</button>
                     <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('official')" id="btn-official">Official</button>
                     <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('community')" id="btn-community">Community</button>
                 </div>
             </div>
-
-            <!-- 3. Category Select -->
-            <div class="col-lg-3">
-                <select class="form-select form-select-custom" id="categoryFilter">
-                    <option value="all" selected>All Categories</option>
-                    <option value="preferences" id="prefOption" style="display:none;">♥ For You</option>
-                    <hr>
-                    <option value="music">Music</option>
-                    <option value="theatre">Theatre</option>
-                    <option value="visual-arts">Visual Arts</option>
-                    <option value="workshops">Workshops</option>
-                    <option value="comedy">Comedy</option>
-                    <option value="film">Film</option>
-                </select>
+            
+            <div class="col-12 mt-3">
+                <div id="category-scroll-container" class="category-scroll-wrapper d-flex gap-2 text-nowrap">
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 active-category flex-shrink-0" onclick="setCategory('all', this)">All</button>
+                    <button id="btn-preferences" class="btn btn-sm btn-outline-warning rounded-pill px-3 flex-shrink-0" onclick="setCategory('preferences', this)">♥ For You</button>
+                    </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading State -->
     <div id="loading" class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-2 text-gray-400">Syncing databases...</p>
     </div>
 
-    <!-- Empty State -->
     <div id="emptyState" class="text-center py-5" style="display: none;">
         <div class="mb-3">
             <i class="bi bi-folder2-open display-1 text-secondary opacity-25"></i>
         </div>
-        <h4 class="text-white">No events found</h4>
-        <p class="text-gray-400">We couldn't find anything matching your filters.</p>
-        <button class="btn btn-primary rounded-pill px-4" onclick="resetFilters()">View All Events</button>
+        <h4 class="text-white" id="empty-title">No events found</h4>
+        <p class="text-gray-400" id="empty-desc">We couldn't find anything matching your filters.</p>
+        <div id="empty-action">
+            <button class="btn btn-primary rounded-pill px-4" onclick="resetFilters()">View All Events</button>
+        </div>
     </div>
 
-    <!-- EVENTS GRID -->
-    <div id="eventsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <!-- JS Injects Cards Here -->
-    </div>
+    <div id="eventsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"></div>
 
-    <!-- PAGINATION -->
     <div class="d-flex justify-content-center mt-5">
         <nav aria-label="Page navigation">
             <ul class="pagination pagination-sm" id="pagination"></ul>
@@ -239,44 +210,33 @@
     };
 
     async function init() {
+        await loadCategories(); 
         await loadUserPreferences();
         await fetchEvents();
-        
+
         document.getElementById('searchInput').addEventListener('input', (e) => {
             state.filters.search = e.target.value;
             applyFilters();
         });
-        document.getElementById('categoryFilter').addEventListener('change', (e) => {
-            state.filters.category = e.target.value;
-            applyFilters();
-        });
     }
 
-    async function fetchEvents() {
-        const loader = document.getElementById('loading');
-        loader.style.display = 'block';
-        document.getElementById('eventsGrid').style.display = 'none';
-
+    async function loadCategories() {
         try {
-            const res = await fetch(`/api/all-events?source=all&category=all`);
-            const data = await res.json();
+            const res = await fetch('/api/tags');
+            const tags = await res.json();
+            const container = document.getElementById('category-scroll-container');
             
-            if(data.status === 'success') {
-                state.allEvents = data.events;
-                
-                // UPDATE THE STATS BOARD
-                document.getElementById('stat-total').textContent = data.total;
-                document.getElementById('stat-official').textContent = data.official_count;
-                document.getElementById('stat-community').textContent = data.community_count;
-                
-                applyFilters();
-            }
-        } catch(e) {
-            console.error(e);
-        } finally {
-            loader.style.display = 'none';
-            document.getElementById('eventsGrid').style.display = 'flex';
-        }
+            // Sort alphabetically
+            tags.sort((a, b) => a.tag_name.localeCompare(b.tag_name));
+
+            tags.forEach(tag => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0'; // Added flex-shrink-0
+                btn.textContent = tag.tag_name;
+                btn.onclick = function() { setCategory(tag.tag_name, this); };
+                container.appendChild(btn);
+            });
+        } catch(e) { console.error("Failed to load tags", e); }
     }
 
     async function loadUserPreferences() {
@@ -285,14 +245,39 @@
             if(res.ok) {
                 const data = await res.json();
                 state.userPreferences = data.tags.map(t => t.tag_name);
-                const opt = document.getElementById('prefOption');
-                opt.style.display = 'block';
-                opt.text = `♥ For You (${state.userPreferences.length} tags)`;
+                
+                // Update button text
+                const btn = document.getElementById('btn-preferences');
+                if(btn) {
+                    btn.textContent = `♥ For You (${state.userPreferences.length})`;
+                }
             }
         } catch(e) {}
     }
 
-    function setSource(source) {
+    window.setCategory = function(cat, btnElement) {
+        state.filters.category = cat;
+        const container = document.getElementById('category-scroll-container');
+        
+        // Reset styles
+        Array.from(container.children).forEach(child => {
+            child.classList.remove('active-category', 'bg-light', 'text-dark');
+            child.classList.add('btn-outline-secondary');
+        });
+        
+        // Specific styling for 'For You' vs others
+        if(cat === 'preferences') {
+            btnElement.classList.remove('btn-outline-secondary'); // Remove outline from 'For You'
+            btnElement.classList.add('active-category', 'bg-warning', 'text-dark', 'border-warning'); // Make it yellow
+        } else {
+            btnElement.classList.remove('btn-outline-secondary');
+            btnElement.classList.add('active-category', 'bg-light', 'text-dark');
+        }
+        
+        applyFilters();
+    };
+
+    window.setSource = function(source) {
         state.filters.source = source;
         document.querySelectorAll('.segmented-btn').forEach(btn => btn.classList.remove('active'));
         if(source === 'all') document.getElementById('btn-all').classList.add('active');
@@ -302,24 +287,34 @@
     }
 
     function applyFilters() {
+        // Handle "For You" with 0 tags (The UX Fix)
+        if(state.filters.category === 'preferences' && state.userPreferences.length === 0) {
+            showEmptyState("No interests selected", "You haven't set your interests yet. Go to your profile to personalize your feed.", true);
+            return;
+        }
+
         let results = state.allEvents;
 
+        // Source Filter
         if(state.filters.source !== 'all') {
             results = results.filter(e => e.source === state.filters.source);
         }
 
+        // Category Filter
         if(state.filters.category === 'preferences') {
-            if(state.userPreferences.length > 0) {
-                results = results.filter(e => {
-                    if(e.category && state.userPreferences.includes(e.category)) return true;
-                    if(e.tags && e.tags.some(t => state.userPreferences.includes(t))) return true;
-                    return false;
-                });
-            }
+            results = results.filter(e => {
+                if(e.category && state.userPreferences.includes(e.category)) return true;
+                if(e.tags && e.tags.some(t => state.userPreferences.includes(t))) return true;
+                return false;
+            });
         } else if(state.filters.category !== 'all') {
-            results = results.filter(e => e.category === state.filters.category);
+            results = results.filter(e => {
+                // Check mapped category OR tags array
+                return e.category === state.filters.category || (e.tags && e.tags.includes(state.filters.category));
+            });
         }
 
+        // Search Filter
         if(state.filters.search) {
             const term = state.filters.search.toLowerCase();
             results = results.filter(e => 
@@ -333,13 +328,28 @@
         renderPage();
     }
 
-    function resetFilters() {
-        state.filters.search = '';
-        state.filters.category = 'all';
-        state.filters.source = 'all';
-        document.getElementById('searchInput').value = '';
-        document.getElementById('categoryFilter').value = 'all';
-        setSource('all');
+    async function fetchEvents() {
+        const loader = document.getElementById('loading');
+        loader.style.display = 'block';
+        document.getElementById('eventsGrid').style.display = 'none';
+
+        try {
+            const res = await fetch(`/api/all-events?source=all&category=all`);
+            const data = await res.json();
+            
+            if(data.status === 'success') {
+                state.allEvents = data.events;
+                document.getElementById('stat-total').textContent = data.total;
+                document.getElementById('stat-official').textContent = data.official_count;
+                document.getElementById('stat-community').textContent = data.community_count;
+                applyFilters();
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            loader.style.display = 'none';
+            document.getElementById('eventsGrid').style.display = 'flex';
+        }
     }
 
     function renderPage() {
@@ -348,11 +358,13 @@
         grid.innerHTML = '';
 
         if(state.filteredEvents.length === 0) {
-            empty.style.display = 'block';
-            document.getElementById('pagination').innerHTML = '';
+            // Default empty state
+            showEmptyState("No events found", "We couldn't find anything matching your filters.", false);
             return;
         }
+        
         empty.style.display = 'none';
+        document.getElementById('pagination').innerHTML = ''; // Clear old
 
         const start = (state.currentPage - 1) * state.itemsPerPage;
         const end = start + state.itemsPerPage;
@@ -365,10 +377,46 @@
         renderPagination(Math.ceil(state.filteredEvents.length / state.itemsPerPage));
     }
 
+    function showEmptyState(title, desc, isProfileRedirect) {
+        document.getElementById('eventsGrid').innerHTML = '';
+        document.getElementById('pagination').innerHTML = '';
+        const empty = document.getElementById('emptyState');
+        
+        document.getElementById('empty-title').textContent = title;
+        document.getElementById('empty-desc').textContent = desc;
+        
+        const actionDiv = document.getElementById('empty-action');
+        if(isProfileRedirect) {
+            actionDiv.innerHTML = `<a href="/profile" class="btn btn-warning rounded-pill px-4 text-dark fw-bold">Customize Profile</a>`;
+        } else {
+            actionDiv.innerHTML = `<button class="btn btn-primary rounded-pill px-4" onclick="resetFilters()">View All Events</button>`;
+        }
+        
+        empty.style.display = 'block';
+    }
+
+    window.resetFilters = function() {
+        state.filters.search = '';
+        state.filters.category = 'all';
+        state.filters.source = 'all';
+        document.getElementById('searchInput').value = '';
+        
+        // Reset category buttons UI
+        const container = document.getElementById('category-scroll-container');
+        Array.from(container.children).forEach(child => {
+            child.classList.remove('active-category', 'bg-light', 'text-dark', 'bg-warning', 'border-warning');
+            child.classList.add('btn-outline-secondary');
+        });
+        // Set "All" as active
+        container.firstElementChild.classList.add('active-category', 'bg-light', 'text-dark');
+        container.firstElementChild.classList.remove('btn-outline-secondary');
+
+        setSource('all');
+    }
+
     function createCardHtml(event) {
         const fallback = "https://placehold.co/600x400/1e293b/475569?text=No+Image";
         const img = event.image ? event.image : fallback;
-        
         let badgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
         let badgeText = event.source === 'official' ? 'Official' : 'Community';
         
@@ -383,11 +431,9 @@
                     <small class="text-info fw-bold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">
                         ${event.category || 'EVENT'}
                     </small>
-                    
                     <h5 class="text-white fw-bold mb-3 text-truncate" title="${event.title}">
                         ${event.title}
                     </h5>
-                    
                     <div class="mt-auto">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-calendar3 text-gray-400 me-2"></i>
@@ -403,8 +449,7 @@
                     <a href="/event-detail?id=${event.id}" class="btn btn-outline-light btn-sm w-100 rounded-pill">View Details</a>
                 </div>
             </div>
-        </div>
-        `;
+        </div>`;
     }
 
     function renderPagination(totalPages) {
@@ -415,34 +460,28 @@
         let startPage = Math.max(1, state.currentPage - 2);
         let endPage = Math.min(totalPages, startPage + 4);
         
-        // Prev
         pag.innerHTML += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
             <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage-1})">←</button>
         </li>`;
 
         for(let i = startPage; i <= endPage; i++) {
-            const active = i === state.currentPage ? 'bg-primary border-primary' : 'bg-dark text-white border-secondary';
-            pag.innerHTML += `<li class="page-item active">
-                <button class="page-link ${active}" onclick="goTo(${i})">${i}</button>
+            const isActive = i === state.currentPage;
+            const btnClass = isActive ? 'bg-primary border-primary' : 'bg-dark text-white border-secondary';
+            pag.innerHTML += `<li class="page-item ${isActive ? 'active' : ''}">
+                <button class="page-link ${btnClass}" onclick="goTo(${i})">${i}</button>
             </li>`;
         }
 
-        // Next
         pag.innerHTML += `<li class="page-item ${state.currentPage === totalPages ? 'disabled' : ''}">
             <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage+1})">→</button>
         </li>`;
     }
 
-    function goTo(page) {
+    window.goTo = function(page) {
         state.currentPage = page;
         renderPage();
         document.getElementById('eventsGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-
-    // Expose global
-    window.setSource = setSource;
-    window.resetFilters = resetFilters;
-    window.goTo = goTo;
 
     document.addEventListener('DOMContentLoaded', init);
 </script>
