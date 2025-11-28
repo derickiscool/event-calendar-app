@@ -2,790 +2,614 @@
 {% block title %}Event Details — Event Calendar{% endblock %}
 
 {% block content %}
-<div class="page-event-detail">
-  <div class="container">
-    <!-- Loading State -->
-    <div id="loading" class="loading-state">
-      <p>Loading event details...</p>
+<style>
+    /* --- COLOR & LAYOUT OVERRIDES --- */
+    .text-gray-300 { color: #cbd5e1 !important; }
+    .text-gray-400 { color: #94a3b8 !important; }
+    
+    /* Hero Image Section */
+    .event-hero {
+        position: relative;
+        height: 400px;
+        overflow: hidden;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+    .event-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .event-hero-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.95), transparent);
+        padding: 2rem;
+        padding-top: 6rem;
+    }
+
+    /* Badges (Consistent with Home) */
+    .badge-official { background-color: #22d3ee; color: #0f172a; }
+    .badge-community { background-color: #4ade80; color: #0f172a; }
+
+    /* Sticky Sidebar Card */
+    .action-card {
+        background-color: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        position: sticky;
+        top: 100px; /* Below navbar */
+        z-index: 10;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Review Cards */
+    .review-card {
+        background-color: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .star.filled { color: #fbbf24; } /* Amber-400 */
+    .star.empty { color: #334155; } /* Slate-700 */
+
+    /* Review Form */
+    .review-form-container {
+        background-color: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Form Inputs */
+    .form-control-dark {
+        background-color: #020617;
+        border: 1px solid #334155;
+        color: #fff;
+    }
+    .form-control-dark:focus {
+        background-color: #020617;
+        color: #fff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+</style>
+
+<div class="container py-5">
+    
+    <!-- 1. LOADING STATE -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-gray-400">Fetching event details...</p>
     </div>
 
-    <!-- Error State -->
-    <div id="error" class="error-state" style="display: none;">
-      <p id="error-message">Event not found</p>
-      <a href="/" class="btn btn-primary">← Back to Events</a>
+    <!-- 2. ERROR STATE -->
+    <div id="error" class="text-center py-5" style="display: none;">
+        <i class="bi bi-exclamation-octagon display-1 text-danger opacity-50"></i>
+        <h3 class="text-white mt-3">Event Not Found</h3>
+        <p class="text-gray-400 mb-4" id="error-message">The event you are looking for does not exist or has been removed.</p>
+        <a href="/" class="btn btn-outline-light rounded-pill px-4">← Return to Events</a>
     </div>
 
-    <!-- Event Detail Content -->
+    <!-- 3. MAIN CONTENT -->
     <article id="event-detail" style="display: none;">
-      <div class="event-header">
-        <a href="/" class="back-link">← Back to Events</a>
-        <div class="event-badges" id="event-badges"></div>
-      </div>
-
-      <div class="event-image-container">
-        <img id="event-image" src="" alt="" class="event-detail-image">
-      </div>
-
-      <div class="event-content">
-        <h1 id="event-title" class="event-detail-title">Event Title</h1>
-
-        <div class="event-meta-grid">
-          <div class="meta-item">
-            <span class="meta-icon">📅</span>
-            <div class="meta-content">
-              <strong>Date</strong>
-              <p id="event-date">Date TBA</p>
-            </div>
-          </div>
-
-          <div class="meta-item">
-            <span class="meta-icon">📍</span>
-            <div class="meta-content">
-              <strong>Venue</strong>
-              <p id="event-venue">Venue TBA</p>
-            </div>
-          </div>
-
-          <div class="meta-item" id="location-item" style="display: none;">
-            <span class="meta-icon">🗺️</span>
-            <div class="meta-content">
-              <strong>Address</strong>
-              <p id="event-location">Address</p>
-            </div>
-          </div>
+        
+        <!-- Breadcrumb / Back Link -->
+        <div class="mb-4">
+            <a href="/" class="text-decoration-none text-gray-400 hover-white">
+                <i class="bi bi-arrow-left me-1"></i> Back to Events
+            </a>
         </div>
 
-        <div class="event-description-section">
-          <h2>About This Event</h2>
-          <div id="event-description" class="event-description">
-            <p>Event description will appear here...</p>
-          </div>
-        </div>
-
-        <div class="event-actions" id="event-actions" style="display: none;">
-          <button id="bookmark-btn" class="btn btn-secondary bookmark-btn" style="display: none;">
-            <span class="bookmark-icon">🔖</span>
-            <span class="bookmark-text">Bookmark Event</span>
-          </button>
-          <a id="registration-link" href="#" target="_blank" class="btn btn-primary">Register Now</a>
-        </div>
-
-        <!-- Reviews Section -->
-        <div class="reviews-section">
-          <h2>Reviews & Ratings</h2>
-
-          <!-- Reviews Summary -->
-          <div id="reviews-summary" class="reviews-summary" style="display: none;">
-            <div class="average-rating">
-              <span id="avg-rating" class="rating-number">0.0</span>
-              <div class="stars" id="avg-stars"></div>
-              <span id="review-count" class="review-count">0 reviews</span>
-            </div>
-          </div>
-
-          <!-- Your Review (Pinned at Top) -->
-          <div id="user-review-card" class="user-review-card" style="display: none;">
-            <div class="user-review-header">
-              <h3>Your Review</h3>
-              <div class="user-review-actions">
-                <button id="edit-user-review-btn" class="btn-icon" title="Edit review">
-                  <span>✏️</span>
-                </button>
-                <button id="delete-user-review-btn" class="btn-icon" title="Delete review">
-                  <span>🗑️</span>
-                </button>
-              </div>
-            </div>
-            <div class="user-review-content">
-              <div class="user-review-rating" id="user-review-stars"></div>
-              <h4 id="user-review-title" class="user-review-title"></h4>
-              <p id="user-review-body" class="user-review-body"></p>
-              <span id="user-review-date" class="user-review-date"></span>
-            </div>
-          </div>
-
-          <!-- Submit Review Form -->
-          <div class="review-form-container">
-            <h3 id="review-form-title">Write a Review</h3>
-            <form id="review-form" class="review-form">
-              <div class="form-group">
-                <label for="review-rating">Rating *</label>
-                <div class="star-rating-input">
-                  <input type="radio" id="star5" name="rating" value="5" required>
-                  <label for="star5" title="5 stars">★</label>
-                  <input type="radio" id="star4" name="rating" value="4">
-                  <label for="star4" title="4 stars">★</label>
-                  <input type="radio" id="star3" name="rating" value="3">
-                  <label for="star3" title="3 stars">★</label>
-                  <input type="radio" id="star2" name="rating" value="2">
-                  <label for="star2" title="2 stars">★</label>
-                  <input type="radio" id="star1" name="rating" value="1">
-                  <label for="star1" title="1 star">★</label>
+        <!-- HERO SECTION -->
+        <div class="event-hero mb-5">
+            <img id="event-image" src="" alt="Event Image">
+            <div class="event-hero-overlay">
+                <div class="d-flex gap-2 mb-3" id="event-badges">
+                    <!-- JS Injects Badges Here -->
                 </div>
-              </div>
-
-              <div class="form-group">
-                <label for="review-title">Review Title *</label>
-                <input type="text" id="review-title" name="title" placeholder="Summarize your experience" required
-                  maxlength="255">
-              </div>
-
-              <div class="form-group">
-                <label for="review-comment">Your Review *</label>
-                <textarea id="review-comment" name="comment" rows="4"
-                  placeholder="Share your experience with this event..." required></textarea>
-              </div>
-
-              <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Submit Review</button>
-              </div>
-            </form>
-            <div id="review-message" class="review-message" style="display: none;"></div>
-          </div>
-
-          <!-- Existing Reviews List -->
-          <div class="reviews-list">
-            <h3 id="other-reviews-title">Reviews</h3>
-            <div id="reviews-container" class="reviews-container">
-              <p class="no-reviews">No reviews yet. Be the first to review!</p>
+                <h1 id="event-title" class="display-4 fw-bold text-white mb-2">Event Title</h1>
+                <div class="d-flex align-items-center text-gray-300 gap-4 mt-3">
+                    <span class="d-flex align-items-center"><i class="bi bi-calendar3 me-2 text-info"></i> <span id="event-date">Date TBA</span></span>
+                    <span class="d-flex align-items-center"><i class="bi bi-geo-alt-fill me-2 text-danger"></i> <span id="event-venue">Venue TBA</span></span>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+
+        <div class="row g-5">
+            
+            <!-- LEFT COLUMN: Description & Reviews -->
+            <div class="col-lg-8">
+                
+                <!-- About Section -->
+                <div class="mb-5">
+                    <h3 class="text-white fw-bold border-bottom border-secondary pb-3 mb-4">About This Event</h3>
+                    <div id="event-description" class="text-gray-300 fs-5 lh-lg">
+                        <p>Loading description...</p>
+                    </div>
+                </div>
+
+                <!-- Location Detail (If available) -->
+                <div id="location-item" class="mb-5" style="display: none;">
+                    <h5 class="text-white fw-bold mb-3"><i class="bi bi-map me-2"></i>Full Address</h5>
+                    <p id="event-location" class="text-gray-400 bg-dark p-3 rounded-3 border border-secondary"></p>
+                </div>
+
+                <!-- REVIEWS SECTION -->
+                <section class="mt-5 pt-4 border-top border-secondary border-opacity-25">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h3 class="text-white fw-bold m-0">Reviews</h3>
+                        
+                        <!-- Review Stats -->
+                        <div id="reviews-summary" style="display: none;">
+                            <div class="d-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary">
+                                <span class="text-warning fw-bold fs-5 me-2">★ <span id="avg-rating">0.0</span></span>
+                                <span class="text-gray-400 small border-start border-secondary ps-2 ms-1" id="review-count">0 reviews</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1. Review Form (Collapsible/Conditional) -->
+                    <div class="review-form-container">
+                        <h5 class="text-white mb-3" id="review-form-title">Write a Review</h5>
+                        <form id="review-form">
+                            <!-- Star Rating -->
+                            <div class="mb-3">
+                                <label class="text-gray-400 text-uppercase small fw-bold mb-2">Rating</label>
+                                <div class="star-rating-input d-flex gap-2 fs-3" style="cursor: pointer;">
+                                    <!-- Simple radio logic for stars -->
+                                    <div class="btn-group" role="group" aria-label="Rating">
+                                        <input type="radio" class="btn-check" name="rating" id="star1" value="1" required><label class="btn btn-outline-secondary" for="star1">1★</label>
+                                        <input type="radio" class="btn-check" name="rating" id="star2" value="2"><label class="btn btn-outline-secondary" for="star2">2★</label>
+                                        <input type="radio" class="btn-check" name="rating" id="star3" value="3"><label class="btn btn-outline-secondary" for="star3">3★</label>
+                                        <input type="radio" class="btn-check" name="rating" id="star4" value="4"><label class="btn btn-outline-secondary" for="star4">4★</label>
+                                        <input type="radio" class="btn-check" name="rating" id="star5" value="5"><label class="btn btn-outline-secondary" for="star5">5★</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="review-title" class="text-gray-400 text-uppercase small fw-bold mb-2">Title</label>
+                                <input type="text" class="form-control form-control-dark" id="review-title" placeholder="Summarize your experience..." required maxlength="100">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="review-comment" class="text-gray-400 text-uppercase small fw-bold mb-2">Review</label>
+                                <textarea class="form-control form-control-dark" id="review-comment" rows="3" placeholder="Share details about the event..." required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 fw-bold">Submit Review</button>
+                        </form>
+                        <div id="review-message" class="alert mt-3" style="display: none;"></div>
+                    </div>
+
+                    <!-- 2. Your Review (Pinned) -->
+                    <div id="user-review-card" class="mb-4" style="display: none;">
+                        <h6 class="text-gray-400 text-uppercase small fw-bold mb-2">Your Review</h6>
+                        <div class="review-card border-primary">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div id="user-review-stars" class="text-warning mb-2 fs-5"></div>
+                                    <h5 id="user-review-title" class="text-white fw-bold"></h5>
+                                    <p id="user-review-body" class="text-gray-300 mb-2"></p>
+                                    <small id="user-review-date" class="text-gray-400"></small>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary border-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        <li><a class="dropdown-item" href="#" id="edit-user-review-btn"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#" id="delete-user-review-btn"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Other Reviews List -->
+                    <h6 id="other-reviews-title" class="text-gray-400 text-uppercase small fw-bold mb-3 mt-5">Recent Reviews</h6>
+                    <div id="reviews-container">
+                        <!-- JS Injects Reviews Here -->
+                    </div>
+
+                </section>
+            </div>
+
+            <!-- RIGHT COLUMN: Sticky Sidebar -->
+            <div class="col-lg-4">
+                <div class="action-card p-4">
+                    <h4 class="text-white fw-bold mb-4">Event Actions</h4>
+                    
+                    <div class="d-grid gap-3">
+                        <a id="registration-link" href="#" target="_blank" class="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm">
+                            Register Now <i class="bi bi-box-arrow-up-right ms-2"></i>
+                        </a>
+                        
+                        <button id="bookmark-btn" class="btn btn-outline-light btn-lg rounded-pill d-flex align-items-center justify-content-center">
+                            <i class="bi bi-bookmark me-2 bookmark-icon"></i>
+                            <span class="bookmark-text">Save to Bookmarks</span>
+                        </button>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-top border-secondary border-opacity-25">
+                        <small class="text-gray-400 d-block mb-2 text-center">Share this event</small>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-dark border border-secondary text-gray-300" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!');"><i class="bi bi-link-45deg"></i> Copy Link</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </article>
-  </div>
 </div>
+
+<!-- Notification Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-message">Action successful</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script type="module">
-  const API_BASE = window.API_BASE || '/api';
+<script>
+const API_BASE = '/api';
+const urlParams = new URLSearchParams(window.location.search);
+const eventId = urlParams.get('id');
 
-  // Get event ID from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const eventId = urlParams.get('id');
+const els = {
+    loading: document.getElementById('loading'),
+    error: document.getElementById('error'),
+    detail: document.getElementById('event-detail'),
+    title: document.getElementById('event-title'),
+    img: document.getElementById('event-image'),
+    badges: document.getElementById('event-badges'),
+    date: document.getElementById('event-date'),
+    venue: document.getElementById('event-venue'),
+    locationBox: document.getElementById('location-item'),
+    locationText: document.getElementById('event-location'),
+    desc: document.getElementById('event-description'),
+    regLink: document.getElementById('registration-link'),
+    bookmarkBtn: document.getElementById('bookmark-btn'),
+    // Review Els
+    reviewContainer: document.getElementById('reviews-container'),
+    userReviewCard: document.getElementById('user-review-card'),
+    reviewFormContainer: document.querySelector('.review-form-container'),
+    avgRating: document.getElementById('avg-rating'),
+    reviewCount: document.getElementById('review-count'),
+    reviewSummary: document.getElementById('reviews-summary')
+};
 
-  const loading = document.getElementById('loading');
-  const error = document.getElementById('error');
-  const eventDetail = document.getElementById('event-detail');
+let currentUserId = null;
+let hasUserReviewed = false;
+let editingReviewId = null;
+let isBookmarked = false;
 
-  if (!eventId) {
-    showError('No event ID provided');
-  } else {
-    loadEventDetails(eventId);
-  }
-
-  async function loadEventDetails(id) {
-    try {
-      const response = await fetch(`${API_BASE}/event/${encodeURIComponent(id)}`);
-
-      if (!response.ok) {
-        throw new Error('Event not found');
-      }
-
-      const data = await response.json();
-
-      if (data.status === 'success' && data.event) {
-        displayEvent(data.event);
-      } else {
-        throw new Error('Invalid response format');
-      }
-    } catch (err) {
-      console.error('Error loading event:', err);
-      showError(err.message || 'Failed to load event details');
+// --- INIT ---
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!eventId) {
+        showError('No event ID provided');
+        return;
     }
-  }
+    
+    await getCurrentUser();
+    await loadEventDetails();
+    await loadReviews();
+    checkBookmarkStatus();
+    
+    // Listeners
+    document.getElementById('review-form').addEventListener('submit', handleReviewSubmit);
+    els.bookmarkBtn.addEventListener('click', toggleBookmark);
+});
 
-  function displayEvent(event) {
-    // Hide loading, show content
-    loading.style.display = 'none';
-    eventDetail.style.display = 'block';
+// --- CORE DATA LOADING ---
+async function loadEventDetails() {
+    try {
+        const res = await fetch(`${API_BASE}/event/${encodeURIComponent(eventId)}`);
+        if (!res.ok) throw new Error('Event not found');
+        
+        const data = await res.json();
+        if (data.status === 'success') renderEvent(data.event);
+        else throw new Error('Invalid Data');
+    } catch (err) {
+        console.error(err);
+        showError(err.message);
+    }
+}
 
-    // Set title and meta tags
+function renderEvent(event) {
+    els.loading.style.display = 'none';
+    els.detail.style.display = 'block';
+    
+    // Basic Info
     document.title = `${event.title} — Event Calendar`;
-
-    // Event title
-    document.getElementById('event-title').textContent = event.title;
-
-    // Event image
-    const imgEl = document.getElementById('event-image');
-    imgEl.src = event.image_url || event.image || '/static/assets/images/default-event.svg';
-    imgEl.alt = event.title;
-    imgEl.onerror = function () {
-      this.src = '/static/assets/images/default-event.svg';
-    };
+    els.title.textContent = event.title;
+    els.img.src = event.image_url || event.image || "https://placehold.co/1200x600/1e293b/475569?text=Event+Image";
+    els.date.textContent = event.date || 'TBA';
+    els.venue.textContent = event.venue || 'TBA';
 
     // Badges
-    const badgesContainer = document.getElementById('event-badges');
-    let badges = [];
-
-    if (event.category && event.category !== 'other') {
-      badges.push(`<span class="badge badge-${event.category}">${formatCategory(event.category)}</span>`);
+    let badgesHtml = '';
+    const srcBadgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
+    badgesHtml += `<span class="badge rounded-pill ${srcBadgeClass} fw-bold text-uppercase px-3 py-2">${event.source}</span>`;
+    if(event.category && event.category !== 'other') {
+        badgesHtml += `<span class="badge rounded-pill bg-dark border border-secondary text-gray-300 text-uppercase px-3 py-2">${event.category}</span>`;
     }
+    els.badges.innerHTML = badgesHtml;
 
-    badges.push(`<span class="badge badge-${event.source}">${event.source === 'official' ? '🏛️ Official' : '👥 Community'}</span>`);
-    badgesContainer.innerHTML = badges.join('');
-
-    // Date
-    document.getElementById('event-date').textContent = event.date || 'Date TBA';
-
-    // Venue
-    document.getElementById('event-venue').textContent = event.venue || 'Venue TBA';
-
-    // Location (address)
-    if (event.location) {
-      document.getElementById('location-item').style.display = 'flex';
-      document.getElementById('event-location').textContent = event.location;
+    // Location
+    if(event.address || event.location) {
+        els.locationBox.style.display = 'block';
+        els.locationText.textContent = event.address || event.location;
     }
 
     // Description
-    const descEl = document.getElementById('event-description');
-    if (event.description) {
-      // Convert line breaks to paragraphs
-      const paragraphs = event.description.split('\n').filter(p => p.trim());
-      descEl.innerHTML = paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+    if(event.description) {
+        // Simple newline to br
+        els.desc.innerHTML = event.description.split('\n').map(line => `<p>${line}</p>`).join('');
     } else {
-      descEl.innerHTML = '<p><em>No description available</em></p>';
+        els.desc.innerHTML = '<p class="text-muted fst-italic">No description provided.</p>';
     }
 
-    // Registration link and bookmark button
-    document.getElementById('event-actions').style.display = 'block';
-
-    if (event.registration_link) {
-      document.getElementById('registration-link').href = event.registration_link;
-      document.getElementById('registration-link').style.display = 'inline-block';
+    // Link
+    if(event.registration_link) {
+        els.regLink.href = event.registration_link;
     } else {
-      document.getElementById('registration-link').style.display = 'none';
+        els.regLink.classList.add('disabled');
+        els.regLink.textContent = 'No Registration Link';
     }
+}
 
-    // Always show bookmark button
-    document.getElementById('bookmark-btn').style.display = 'inline-block';
-    checkBookmarkStatus(event.id);
-  }
+function showError(msg) {
+    els.loading.style.display = 'none';
+    els.error.style.display = 'block';
+    document.getElementById('error-message').innerText = msg;
+}
 
-  function showError(message) {
-    loading.style.display = 'none';
-    error.style.display = 'block';
-    document.getElementById('error-message').textContent = message;
-  }
-
-  function formatCategory(category) {
-    const categories = {
-      'music': 'Music',
-      'theatre': 'Theatre',
-      'comedy': 'Comedy',
-      'film': 'Film',
-      'visual-arts': 'Visual Arts',
-      'workshops': 'Workshops',
-      'other': 'Other'
-    };
-    return categories[category] || category;
-  }
-
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  // ===== REVIEWS FUNCTIONALITY =====
-
-  let currentUserId = null;
-  let hasUserReviewed = false;
-
-  // Get current user
-  async function getCurrentUser() {
+// --- USER & AUTH ---
+async function getCurrentUser() {
     try {
-      const response = await fetch(`${API_BASE}/profile/me`, {
-        credentials: 'include'
-      });
+        const res = await fetch(`${API_BASE}/profile/me`);
+        if(res.ok) {
+            const data = await res.json();
+            currentUserId = data.user.id;
+        }
+    } catch(e) {}
+}
 
-      if (response.ok) {
-        const data = await response.json();
-        currentUserId = data.user.id;
-        console.log('User logged in, ID:', currentUserId);
-      } else {
-        console.log('User not logged in (response status:', response.status, ')');
-        currentUserId = null;
-      }
-    } catch (err) {
-      console.error('Error getting current user:', err);
-      currentUserId = null;
-    }
-  }
-
-  // Load reviews for the event
-  async function loadReviews(eventId) {
+// --- BOOKMARKS ---
+async function checkBookmarkStatus() {
+    if(!currentUserId) return;
     try {
-      const response = await fetch(`${API_BASE}/reviews?event_id=${encodeURIComponent(eventId)}`);
+        const res = await fetch(`${API_BASE}/registered-events/check?event_id=${encodeURIComponent(eventId)}`);
+        if(res.ok) {
+            const data = await res.json();
+            isBookmarked = data.is_registered;
+            updateBookmarkUI();
+        }
+    } catch(e) {}
+}
 
-      if (!response.ok) {
-        throw new Error('Failed to load reviews');
-      }
-
-      const reviews = await response.json();
-      displayReviews(reviews);
-      updateReviewsSummary(reviews);
-    } catch (err) {
-      console.error('Error loading reviews:', err);
+function updateBookmarkUI() {
+    const icon = els.bookmarkBtn.querySelector('.bookmark-icon');
+    const text = els.bookmarkBtn.querySelector('.bookmark-text');
+    
+    if(isBookmarked) {
+        els.bookmarkBtn.classList.remove('btn-outline-light');
+        els.bookmarkBtn.classList.add('btn-success', 'border-0');
+        icon.className = 'bi bi-bookmark-check-fill me-2 bookmark-icon';
+        text.textContent = 'Saved';
+    } else {
+        els.bookmarkBtn.classList.add('btn-outline-light');
+        els.bookmarkBtn.classList.remove('btn-success', 'border-0');
+        icon.className = 'bi bi-bookmark me-2 bookmark-icon';
+        text.textContent = 'Save to Bookmarks';
     }
-  }
+}
 
-  // Display reviews in the list
-  function displayReviews(reviews) {
-    const container = document.getElementById('reviews-container');
-    const userReviewCard = document.getElementById('user-review-card');
-    const otherReviewsTitle = document.getElementById('other-reviews-title');
+async function toggleBookmark() {
+    if(!currentUserId) {
+        showToast('Please log in to save events.', 'bg-danger');
+        return;
+    }
+    
+    els.bookmarkBtn.disabled = true;
+    try {
+        const method = isBookmarked ? 'DELETE' : 'POST';
+        const url = isBookmarked ? `${API_BASE}/registered-events/${encodeURIComponent(eventId)}` : `${API_BASE}/registered-events`;
+        const body = isBookmarked ? null : JSON.stringify({ event_id: eventId });
+        
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: body
+        });
+        
+        if(res.ok) {
+            isBookmarked = !isBookmarked;
+            updateBookmarkUI();
+            showToast(isBookmarked ? 'Event saved!' : 'Event removed from bookmarks.', 'bg-success');
+        } else {
+            showToast('Action failed.', 'bg-danger');
+        }
+    } catch(e) { console.error(e); }
+    finally { els.bookmarkBtn.disabled = false; }
+}
 
-    console.log('Displaying reviews:', reviews);
-    console.log('Current user ID:', currentUserId);
+// --- REVIEWS LOGIC ---
+async function loadReviews() {
+    try {
+        const res = await fetch(`${API_BASE}/reviews?event_id=${encodeURIComponent(eventId)}`);
+        if(res.ok) {
+            const reviews = await res.json();
+            renderReviews(reviews);
+        }
+    } catch(e) {}
+}
 
-    // Separate user's review from others
+function renderReviews(reviews) {
+    // 1. Stats
+    if(reviews.length > 0) {
+        const total = reviews.reduce((sum, r) => sum + (r.rating || r.score || 0), 0);
+        const avg = (total / reviews.length).toFixed(1);
+        els.avgRating.textContent = avg;
+        els.reviewCount.textContent = `${reviews.length} reviews`;
+        els.reviewSummary.style.display = 'block';
+    }
+
+    // 2. Split User vs Others
     let userReview = null;
-    let otherReviews = [];
+    let otherReviews = reviews;
 
-    if (currentUserId && reviews && reviews.length > 0) {
-      userReview = reviews.find(review => review.user_id === currentUserId);
-      otherReviews = reviews.filter(review => review.user_id !== currentUserId);
+    if(currentUserId) {
+        userReview = reviews.find(r => r.user_id === currentUserId);
+        otherReviews = reviews.filter(r => r.user_id !== currentUserId);
+    }
+
+    // 3. Render User Review Pinned
+    if(userReview) {
+        hasUserReviewed = true;
+        els.reviewFormContainer.style.display = 'none'; // Hide form
+        els.userReviewCard.style.display = 'block';
+        
+        // Populate User Card
+        document.getElementById('user-review-title').textContent = userReview.title || 'No Title';
+        document.getElementById('user-review-body').textContent = userReview.comment || userReview.body;
+        document.getElementById('user-review-date').textContent = new Date(userReview.created_at).toLocaleDateString();
+        document.getElementById('user-review-stars').innerHTML = generateStars(userReview.rating || userReview.score);
+        
+        // Bind Edit/Delete
+        document.getElementById('delete-user-review-btn').onclick = () => deleteReview(userReview.id);
+        document.getElementById('edit-user-review-btn').onclick = () => setupEdit(userReview);
+        
     } else {
-      otherReviews = reviews || [];
+        hasUserReviewed = false;
+        els.reviewFormContainer.style.display = currentUserId ? 'block' : 'none'; // Only show if logged in
+        els.userReviewCard.style.display = 'none';
     }
 
-    hasUserReviewed = !!userReview; // Convert to boolean (undefined or null becomes false)
-    console.log('User review found:', userReview);
-    console.log('Has user reviewed:', hasUserReviewed);    // Display user's review in pinned card
-    if (userReview) {
-      displayUserReviewCard(userReview);
-      otherReviewsTitle.textContent = 'Other Reviews';
-    } else {
-      userReviewCard.style.display = 'none';
-      otherReviewsTitle.textContent = 'Reviews';
+    // 4. Render Others
+    els.reviewContainer.innerHTML = '';
+    if(otherReviews.length === 0) {
+        els.reviewContainer.innerHTML = '<p class="text-gray-400 fst-italic">No other reviews yet.</p>';
+        return;
     }
 
-    updateReviewFormVisibility();
-
-    // Display other reviews
-    if (otherReviews.length === 0) {
-      if (userReview) {
-        container.innerHTML = '<p class="no-reviews">No other reviews yet.</p>';
-      } else {
-        container.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to review!</p>';
-      }
-      return;
-    }
-
-    container.innerHTML = otherReviews.map(review => {
-      console.log('Processing review:', review);
-
-      // API returns 'rating' and 'comment', normalize to score/body for consistency
-      const score = review.rating || review.score;
-      const body = review.comment || review.body;
-      const title = review.title || '';
-
-      return `
-        <div class="review-card" data-review-id="${review.id}">
-          <div class="review-header">
-            <div class="review-author">
-              <strong>${escapeHtml(review.user_name || 'Anonymous')}</strong>
-              <span class="review-date">${formatDate(review.created_at)}</span>
+    otherReviews.forEach(r => {
+        const html = `
+            <div class="review-card">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold text-white">${r.user_name || 'Anonymous'}</span>
+                    <span class="text-gray-400 small">${new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+                <div class="text-warning small mb-2">${generateStars(r.rating || r.score)}</div>
+                <h6 class="text-white fw-bold">${r.title || ''}</h6>
+                <p class="text-gray-300 m-0">${r.comment || r.body}</p>
             </div>
-            <div class="review-rating">
-              ${generateStars(score)}
-            </div>
-          </div>
-          ${title ? `<h4 class="review-title">${escapeHtml(title)}</h4>` : ''}
-          <div class="review-body">
-            <p>${escapeHtml(body)}</p>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // Display user's review in pinned card
-  function displayUserReviewCard(review) {
-    const userReviewCard = document.getElementById('user-review-card');
-    const starsEl = document.getElementById('user-review-stars');
-    const titleEl = document.getElementById('user-review-title');
-    const bodyEl = document.getElementById('user-review-body');
-    const dateEl = document.getElementById('user-review-date');
-
-    // Normalize field names
-    const score = review.rating || review.score;
-    const body = review.comment || review.body;
-    const title = review.title || '';
-
-    starsEl.innerHTML = generateStars(score);
-    titleEl.textContent = title;
-    bodyEl.textContent = body;
-    dateEl.textContent = formatDate(review.created_at);
-
-    userReviewCard.style.display = 'block';
-
-    // Set up edit and delete button handlers
-    const editBtn = document.getElementById('edit-user-review-btn');
-    const deleteBtn = document.getElementById('delete-user-review-btn');
-
-    editBtn.onclick = () => editReview(review.id, title, body, score);
-    deleteBtn.onclick = () => deleteReview(review.id);
-  }
-
-  // Update reviews summary (average rating)
-  function updateReviewsSummary(reviews) {
-    if (!reviews || reviews.length === 0) return;
-
-    const summaryEl = document.getElementById('reviews-summary');
-    const avgRatingEl = document.getElementById('avg-rating');
-    const avgStarsEl = document.getElementById('avg-stars');
-    const reviewCountEl = document.getElementById('review-count');
-
-    // API returns 'rating', fallback to 'score' for consistency
-    const avgRating = reviews.reduce((sum, r) => sum + (r.rating || r.score), 0) / reviews.length;
-
-    summaryEl.style.display = 'block';
-    avgRatingEl.textContent = avgRating.toFixed(1);
-    avgStarsEl.innerHTML = generateStars(avgRating);
-    reviewCountEl.textContent = `${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`;
-  }
-
-  // Generate star HTML
-  function generateStars(rating) {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
-    let html = '';
-    for (let i = 0; i < fullStars; i++) html += '<span class="star filled">★</span>';
-    if (hasHalfStar) html += '<span class="star half">★</span>';
-    for (let i = 0; i < emptyStars; i++) html += '<span class="star empty">☆</span>';
-
-    return html;
-  }
-
-  // Format date
-  function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-
-    return date.toLocaleDateString();
-  }
-
-  let editingReviewId = null;
-
-  // Update review form visibility based on whether user has already reviewed
-  function updateReviewFormVisibility() {
-    const formContainer = document.querySelector('.review-form-container');
-    const formTitle = document.getElementById('review-form-title');
-
-    console.log('updateReviewFormVisibility called');
-    console.log('currentUserId:', currentUserId);
-    console.log('hasUserReviewed:', hasUserReviewed);
-    console.log('editingReviewId:', editingReviewId);
-    console.log('formContainer:', formContainer);
-
-    // Only hide form if user is logged in AND has already reviewed AND not editing
-    if (currentUserId && hasUserReviewed && editingReviewId === null) {
-      // User is logged in, has already reviewed, and is not editing - hide form
-      console.log('Hiding form - user already reviewed');
-      if (formContainer) formContainer.style.display = 'none';
-    } else {
-      // User hasn't reviewed yet or is editing or not logged in - show form
-      console.log('Showing form - user has not reviewed or is editing or not logged in');
-      if (formContainer) formContainer.style.display = 'block';
-      if (formTitle && editingReviewId === null) {
-        formTitle.textContent = 'Write a Review';
-      }
-    }
-  }
-
-  // Edit review
-  window.editReview = function (reviewId, title, body, score) {
-    console.log('editReview called with:', { reviewId, title, body, score });
-    editingReviewId = reviewId;
-
-    // Show the form when editing
-    updateReviewFormVisibility();
-
-    // Populate form with review data
-    const titleInput = document.getElementById('review-title');
-    const commentInput = document.getElementById('review-comment');
-    const ratingInput = document.querySelector(`input[name="rating"][value="${score}"]`);
-
-    console.log('Form elements:', { titleInput, commentInput, ratingInput });
-
-    if (titleInput) titleInput.value = title;
-    if (commentInput) commentInput.value = body;
-    if (ratingInput) ratingInput.checked = true;
-
-    // Change form title and button text
-    const formTitle = document.querySelector('.review-form-container h3');
-    const submitBtn = document.querySelector('#review-form button[type="submit"]');
-    formTitle.textContent = 'Edit Your Review';
-    submitBtn.textContent = 'Update Review';    // Add cancel button
-    if (!document.getElementById('cancel-edit-btn')) {
-      const cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.id = 'cancel-edit-btn';
-      cancelBtn.className = 'btn btn-secondary';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.onclick = cancelEditReview;
-      submitBtn.parentElement.appendChild(cancelBtn);
-    }
-
-    // Scroll to form
-    document.querySelector('.review-form-container').scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Cancel edit
-  function cancelEditReview() {
-    editingReviewId = null;
-    document.getElementById('review-form').reset();
-
-    const formTitle = document.querySelector('.review-form-container h3');
-    const submitBtn = document.querySelector('#review-form button[type="submit"]');
-    formTitle.textContent = 'Write a Review';
-    submitBtn.textContent = 'Submit Review';
-
-    const cancelBtn = document.getElementById('cancel-edit-btn');
-    if (cancelBtn) cancelBtn.remove();
-
-    // Hide form again if user has already reviewed
-    updateReviewFormVisibility();
-  }
-
-  // Delete review
-  window.deleteReview = async function (reviewId) {
-    if (!confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/reviews/${reviewId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        showReviewMessage('Review deleted successfully!', 'success');
-        setTimeout(() => {
-          loadReviews(eventId);
-          document.getElementById('review-message').style.display = 'none';
-        }, 1500);
-      } else {
-        const data = await response.json();
-        showReviewMessage(data.error || 'Failed to delete review', 'error');
-      }
-    } catch (err) {
-      console.error('Error deleting review:', err);
-      showReviewMessage('Failed to delete review. Please try again.', 'error');
-    }
-  };
-
-  // Handle review form submission
-  document.getElementById('review-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const rating = document.querySelector('input[name="rating"]:checked');
-    const title = document.getElementById('review-title').value;
-    const comment = document.getElementById('review-comment').value;
-    const messageEl = document.getElementById('review-message');
-
-    if (!rating) {
-      showReviewMessage('Please select a rating', 'error');
-      return;
-    }
-
-    try {
-      const isEditing = editingReviewId !== null;
-      const url = isEditing ? `${API_BASE}/reviews/${editingReviewId}` : `${API_BASE}/reviews`;
-      const method = isEditing ? 'PUT' : 'POST';
-
-      // Different field names for create vs update
-      const requestBody = isEditing ? {
-        score: parseInt(rating.value),
-        title: title.trim(),
-        body: comment.trim()
-      } : {
-        event_id: eventId,
-        rating: parseInt(rating.value),
-        title: title.trim(),
-        comment: comment.trim()
-      };
-
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(requestBody)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        showReviewMessage(isEditing ? 'Review updated successfully!' : 'Review submitted successfully!', 'success');
-        document.getElementById('review-form').reset();
-        if (isEditing) {
-          cancelEditReview();
-        } else {
-          // Mark that user has now reviewed
-          hasUserReviewed = true;
-          updateReviewFormVisibility();
-        }
-        // Reload reviews
-        setTimeout(() => {
-          loadReviews(eventId);
-          messageEl.style.display = 'none';
-        }, 2000);
-      } else {
-        showReviewMessage(data.error || `Failed to ${isEditing ? 'update' : 'submit'} review`, 'error');
-      }
-    } catch (err) {
-      console.error('Error submitting review:', err);
-      showReviewMessage('Failed to submit review. Please try again.', 'error');
-    }
-  });
-
-  // Show review submission message
-  function showReviewMessage(message, type) {
-    const messageEl = document.getElementById('review-message');
-    messageEl.textContent = message;
-    messageEl.className = `review-message ${type}`;
-    messageEl.style.display = 'block';
-  }
-
-  // ===== BOOKMARK FUNCTIONALITY =====
-
-  let isBookmarked = false;
-
-  // Check if event is bookmarked
-  async function checkBookmarkStatus(eventId) {
-    try {
-      const response = await fetch(`${API_BASE}/registered-events/check?event_id=${encodeURIComponent(eventId)}`, {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        isBookmarked = data.is_registered;
-        updateBookmarkButton();
-      }
-    } catch (err) {
-      console.error('Error checking bookmark status:', err);
-    }
-  }
-
-  // Update bookmark button appearance
-  function updateBookmarkButton() {
-    const btn = document.getElementById('bookmark-btn');
-    const icon = btn.querySelector('.bookmark-icon');
-    const text = btn.querySelector('.bookmark-text');
-
-    if (isBookmarked) {
-      btn.classList.add('bookmarked');
-      icon.textContent = '✅';
-      text.textContent = 'Bookmarked';
-    } else {
-      btn.classList.remove('bookmarked');
-      icon.textContent = '🔖';
-      text.textContent = 'Bookmark Event';
-    }
-  }
-
-  // Handle bookmark button click
-  document.getElementById('bookmark-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('bookmark-btn');
-
-    // Disable button during request
-    btn.disabled = true;
-
-    try {
-      if (isBookmarked) {
-        // Remove bookmark
-        const response = await fetch(`${API_BASE}/registered-events/${encodeURIComponent(eventId)}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          isBookmarked = false;
-          updateBookmarkButton();
-          showBookmarkNotification('Bookmark removed', 'success');
-        } else {
-          showBookmarkNotification(data.error || 'Failed to remove bookmark', 'error');
-        }
-      } else {
-        // Add bookmark
-        const response = await fetch(`${API_BASE}/registered-events`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            event_id: eventId
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          isBookmarked = true;
-          updateBookmarkButton();
-          showBookmarkNotification('Event bookmarked!', 'success');
-        } else {
-          if (response.status === 401) {
-            showBookmarkNotification('Please log in to bookmark events', 'error');
-          } else {
-            showBookmarkNotification(data.error || 'Failed to bookmark event', 'error');
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error toggling bookmark:', err);
-      showBookmarkNotification('Failed to update bookmark', 'error');
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  // Show bookmark notification
-  function showBookmarkNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `bookmark-notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => notification.classList.add('show'), 10);
-
-    setTimeout(() => {
-      notification.classList.remove('show');
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-
-  // Ensure form is visible on load (will be hidden later if user already reviewed)
-  const initialFormContainer = document.querySelector('.review-form-container');
-  if (initialFormContainer) {
-    initialFormContainer.style.display = 'block';
-  }
-
-  // Load reviews when event is loaded
-  if (eventId) {
-    getCurrentUser().then(() => {
-      loadReviews(eventId);
+        `;
+        els.reviewContainer.innerHTML += html;
     });
-  }
+}
+
+function generateStars(score) {
+    let html = '';
+    for(let i=1; i<=5; i++) {
+        html += i <= score ? '<i class="bi bi-star-fill me-1"></i>' : '<i class="bi bi-star me-1 text-secondary"></i>';
+    }
+    return html;
+}
+
+// --- REVIEW ACTIONS ---
+async function handleReviewSubmit(e) {
+    e.preventDefault();
+    if(!currentUserId) return;
+
+    const ratingEl = document.querySelector('input[name="rating"]:checked');
+    if(!ratingEl) { showToast('Please select a star rating', 'bg-warning'); return; }
+
+    const payload = {
+        rating: parseInt(ratingEl.value),
+        title: document.getElementById('review-title').value,
+        comment: document.getElementById('review-comment').value
+    };
+
+    // If CREATE, add event_id. If UPDATE, using PUT endpoint usually expects score/body/title
+    if(!editingReviewId) payload.event_id = eventId;
+    else {
+        // Adapt to backend mapping if needed (some backends use score vs rating)
+        payload.score = payload.rating; 
+        payload.body = payload.comment;
+    }
+
+    const url = editingReviewId ? `${API_BASE}/reviews/${editingReviewId}` : `${API_BASE}/reviews`;
+    const method = editingReviewId ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        if(res.ok) {
+            showToast('Review saved successfully!', 'bg-success');
+            document.getElementById('review-form').reset();
+            editingReviewId = null;
+            await loadReviews(); // Reload to refresh UI
+        } else {
+            const err = await res.json();
+            showToast(err.error || 'Failed to save review', 'bg-danger');
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function deleteReview(reviewId) {
+    if(!confirm('Delete this review?')) return;
+    try {
+        const res = await fetch(`${API_BASE}/reviews/${reviewId}`, { method: 'DELETE' });
+        if(res.ok) {
+            showToast('Review deleted.', 'bg-success');
+            await loadReviews();
+        }
+    } catch(e) {}
+}
+
+function setupEdit(review) {
+    editingReviewId = review.id;
+    
+    // Show form, hide card
+    els.reviewFormContainer.style.display = 'block';
+    els.userReviewCard.style.display = 'none';
+    
+    document.getElementById('review-form-title').textContent = 'Edit Your Review';
+    document.getElementById('review-title').value = review.title || '';
+    document.getElementById('review-comment').value = review.comment || review.body || '';
+    
+    // Check radio
+    const score = review.rating || review.score;
+    const radio = document.querySelector(`input[name="rating"][value="${score}"]`);
+    if(radio) radio.checked = true;
+    
+    // Scroll to form
+    els.reviewFormContainer.scrollIntoView({behavior:'smooth'});
+}
+
+function showToast(msg, bgClass='text-bg-primary') {
+    const toastEl = document.getElementById('liveToast');
+    const toastBody = document.getElementById('toast-message');
+    toastEl.className = `toast align-items-center border-0 ${bgClass}`;
+    toastBody.textContent = msg;
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
 </script>
 {% endblock %}

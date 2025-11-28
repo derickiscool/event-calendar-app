@@ -1,129 +1,357 @@
 {% extends "base.html" %}
-{% block title %}Profile — Event Calendar{% endblock %}
+{% block title %}Profile Settings — Event Calendar{% endblock %}
+
 {% block content %}
-<div class="profile-container">
-  <div class="profile-card">
-    <h1>Your Profile</h1>
+<style>
+    /* --- DASHBOARD STYLES --- */
+    .profile-sidebar-card {
+        background: #1e293b;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        text-align: center;
+        padding: 2rem;
+    }
+    .profile-main-card {
+        background: #1e293b;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        padding: 2rem;
+    }
+    
+    /* Avatar Styling */
+    .avatar-wrapper {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1.5rem;
+    }
+    .profile-avatar-lg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 4px solid #0f172a;
+        box-shadow: 0 0 0 2px #3b82f6;
+    }
+    .avatar-upload-btn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: #3b82f6;
+        color: white;
+        border: 2px solid #0f172a;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .avatar-upload-btn:hover {
+        transform: scale(1.1);
+        background: #2563eb;
+    }
 
-    <!-- Profile Display Mode -->
-    <div id="profile-view" class="profile-view">
-      <div class="profile-header">
-        <img id="avatar-display" src="{{ url_for('static', filename='assets/images/default-avatar.svg') }}"
-          alt="Profile Avatar" class="profile-avatar">
-      </div>
+    /* Form Styles */
+    .form-label-custom {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-control-dark {
+        background-color: #0f172a;
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        padding: 0.75rem 1rem;
+    }
+    .form-control-dark:focus {
+        background-color: #0f172a;
+        border-color: #3b82f6;
+        color: #fff;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
 
-      <div class="profile-details">
-        <div class="profile-field">
-          <label>Username</label>
-          <span id="username-display">—</span>
-        </div>
+    /* Tag Pills */
+    .tag-pill {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #94a3b8;
+        padding: 8px 16px;
+        border-radius: 50px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        user-select: none;
+    }
+    .tag-pill:hover {
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+    .tag-pill.active {
+        background: rgba(59, 130, 246, 0.15);
+        border-color: #3b82f6;
+        color: #60a5fa;
+    }
+</style>
 
-        <div class="profile-field">
-          <label>Email</label>
-          <span id="email-display">—</span>
-        </div>
+<div class="container py-5">
+    <div class="row g-4">
+        
+        <!-- LEFT: Identity Sidebar -->
+        <div class="col-lg-4">
+            <div class="profile-sidebar-card h-100">
+                <!-- Avatar -->
+                <div class="avatar-wrapper">
+                    <img id="display-avatar" src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff" 
+                         alt="Profile" class="profile-avatar-lg">
+                    
+                    <!-- File Input triggers form change event -->
+                    <label for="avatar-input" class="avatar-upload-btn" title="Change Photo">
+                        <i class="bi bi-camera-fill small"></i>
+                    </label>
+                </div>
 
-        <div class="profile-field">
-          <label>First Name</label>
-          <span id="fname-display">—</span>
-        </div>
-
-        <div class="profile-field">
-          <label>Last Name</label>
-          <span id="lname-display">—</span>
-        </div>
-
-        <div class="profile-field">
-          <label>Phone Number</label>
-          <span id="phone-display">—</span>
-        </div>
-
-        <div class="profile-field">
-          <label>Postal Code</label>
-          <span id="postal-display">—</span>
-        </div>
-      </div>
-
-      <div class="profile-actions">
-        <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
-        <button id="delete-account-btn" class="btn btn-danger">Delete Account</button>
-      </div>
-    </div>
-
-    <!-- User Preferences Section -->
-    <div class="preferences-section">
-      <h2>My Interests & Preferences</h2>
-      <p class="preferences-subtitle">Select the event categories you're interested in to personalize your experience
-      </p>
-
-      <div id="tags-container" class="tags-grid">
-        <div class="loading">Loading tags...</div>
-      </div>
-
-      <div id="preferences-feedback" class="preferences-feedback"></div>
-    </div>
-
-    <!-- Profile Edit Mode -->
-    <div id="profile-edit" class="profile-edit hidden">
-      <form id="profile-form" class="profile-form" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="avatar-upload">Profile Picture</label>
-          <div class="avatar-upload-container">
-            <div class="avatar-preview">
-              <img id="avatar-preview-img" src="{{ url_for('static', filename='assets/images/default-avatar.svg') }}"
-                alt="Avatar Preview">
+                <h3 id="display-username" class="text-white fw-bold mb-1">...</h3>
+                <p id="display-email" class="text-secondary small mb-4">...</p>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-danger btn-sm" onclick="handleDeleteAccount()">
+                        <i class="bi bi-trash3 me-2"></i> Delete Account
+                    </button>
+                </div>
             </div>
-            <div class="avatar-upload-controls">
-              <input id="avatar-upload" name="avatar" type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
-                style="display: none;">
-              <button type="button" id="choose-avatar-btn" class="btn btn-secondary">Choose Image</button>
-              <button type="button" id="remove-avatar-btn" class="btn btn-secondary"
-                style="display: none;">Remove</button>
+        </div>
+
+        <!-- RIGHT: Settings Form -->
+        <div class="col-lg-8">
+            <div class="profile-main-card">
+                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-3 border-opacity-25">Profile Details</h4>
+                
+                <!-- ID: profile-form -->
+                <form id="profile-form">
+                    
+                    <!-- HIDDEN AVATAR INPUT (Moved inside form so FormData catches it) -->
+                    <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display: none;">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-custom">First Name</label>
+                            <input type="text" class="form-control form-control-dark rounded-3" id="fname" name="fname">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Last Name</label>
+                            <input type="text" class="form-control form-control-dark rounded-3" id="lname" name="lname">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary">+65</span>
+                                <input type="tel" class="form-control form-control-dark" id="phone" name="phone" maxlength="8" placeholder="81234567">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Postal Code</label>
+                            <input type="text" class="form-control form-control-dark rounded-3" id="postal" name="postal_code" maxlength="6">
+                        </div>
+                    </div>
+
+                    <!-- Preferences -->
+                    <div class="mt-5">
+                        <h5 class="text-white fw-bold mb-3">Event Preferences</h5>
+                        <p class="text-secondary small mb-3">Select the categories you want to see on your home feed.</p>
+                        
+                        <div id="tags-container" class="d-flex flex-wrap gap-2">
+                            <span class="text-muted small">Loading tags...</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-3">
+                        <button type="button" class="btn btn-outline-light rounded-pill px-4" onclick="window.location.reload()">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold" id="save-btn">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
             </div>
-          </div>
-          <small class="form-hint">Min: 268×268px, Recommended: 400×400px, Max: 3MB (JPEG, PNG, WebP)</small>
-          <span class="error-message" id="avatar-error"></span>
         </div>
-
-        <div class="form-group">
-          <label for="fname">First Name <span class="optional">(optional)</span></label>
-          <input id="fname" name="fname" type="text" maxlength="45">
-          <span class="error-message" id="fname-edit-error"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="lname">Last Name <span class="optional">(optional)</span></label>
-          <input id="lname" name="lname" type="text" maxlength="45">
-          <span class="error-message" id="lname-edit-error"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="phone">Phone Number</label>
-          <div class="phone-input-container">
-            <span class="phone-prefix">+65</span>
-            <input id="phone" name="phone" type="tel" maxlength="8" pattern="\d{8}" placeholder="12345678">
-          </div>
-          <small class="form-hint">Optional: 8 digits only</small>
-          <span class="error-message" id="phone-error"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="postal-code">Postal Code</label>
-          <input id="postal-code" name="postal_code" type="text" maxlength="6" placeholder="123456">
-          <small class="form-hint">Optional (6 digits)</small>
-          <span class="error-message" id="postal-error"></span>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">Save Changes</button>
-          <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancel</button>
-        </div>
-      </form>
-      <p id="profile-feedback" role="status" aria-live="polite"></p>
     </div>
-  </div>
 </div>
+
+<!-- Notification Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-message">Update successful</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
+
 {% block scripts %}
-<script type="module" src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
+<script>
+    const API_BASE = '/api';
+    let userTags = [];
+    let allTags = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadProfile();
+        await loadPreferences();
+    });
+
+    // --- 1. LOAD PROFILE (Corrected for your Backend Structure) ---
+    async function loadProfile() {
+        try {
+            const res = await fetch(`${API_BASE}/profile/me`);
+            if(!res.ok) throw new Error('Failed to load');
+            const data = await res.json();
+            
+            // Your backend structure: { "user": {...}, "profile": {...} }
+            const u = data.user;
+            const p = data.profile;
+
+            // Identity Sidebar
+            document.getElementById('display-username').textContent = u.username || 'User';
+            document.getElementById('display-email').textContent = u.email || '';
+            
+            // Avatar Logic
+            if(p.avatar_url) {
+                document.getElementById('display-avatar').src = p.avatar_url;
+            } else {
+                const initial = (u.username || 'U').charAt(0).toUpperCase();
+                document.getElementById('display-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=3b82f6&color=fff&size=128`;
+            }
+
+            // Form Fields (Using data.profile)
+            document.getElementById('fname').value = p.fname || '';
+            document.getElementById('lname').value = p.lname || '';
+            document.getElementById('phone').value = p.phone || '';
+            document.getElementById('postal').value = p.postal_code || '';
+
+        } catch(e) { console.error("Profile load error:", e); }
+    }
+
+    // --- 2. PREFERENCES (Tags) ---
+    async function loadPreferences() {
+        try {
+            // Get User Tags
+            const resMe = await fetch(`${API_BASE}/preferences/me`);
+            if(resMe.ok) {
+                const data = await resMe.json();
+                userTags = data.tags.map(t => t.tag_id); 
+            }
+
+            // Get All Tags
+            const resAll = await fetch(`${API_BASE}/tags`);
+            if(resAll.ok) {
+                const data = await resAll.json();
+                allTags = data.tags || data; // Handle array or object wrapper
+                renderTags();
+            }
+        } catch(e) { console.error("Tags error:", e); }
+    }
+
+    function renderTags() {
+        const container = document.getElementById('tags-container');
+        container.innerHTML = '';
+        
+        allTags.forEach(tag => {
+            const isActive = userTags.includes(tag.id);
+            const tagName = tag.tag_name || tag.name || 'Tag';
+            
+            const pill = document.createElement('div');
+            pill.className = `tag-pill ${isActive ? 'active' : ''}`;
+            pill.innerHTML = `<span>${tagName}</span>`;
+            if(isActive) pill.innerHTML += '<i class="bi bi-check-circle-fill small"></i>';
+            
+            pill.onclick = () => toggleTag(tag.id, pill);
+            container.appendChild(pill);
+        });
+    }
+
+    // --- 3. INTERACTIONS ---
+
+    // Toggle Tag (Immediate)
+    async function toggleTag(tagId, element) {
+        const isAdding = !element.classList.contains('active');
+        const method = isAdding ? 'POST' : 'DELETE';
+        const url = `${API_BASE}/preferences/${tagId}`;
+
+        try {
+            element.classList.toggle('active');
+            const spanText = element.querySelector('span').innerText;
+            if(isAdding) element.innerHTML = `<span>${spanText}</span><i class="bi bi-check-circle-fill small"></i>`;
+            else element.innerHTML = `<span>${spanText}</span>`;
+
+            const res = await fetch(url, { method: method });
+            if(!res.ok) throw new Error();
+        } catch(e) {
+            element.classList.toggle('active'); // Revert
+            showToast('Failed to update preference', 'text-bg-danger');
+        }
+    }
+
+    // Avatar Preview Handler (Does NOT upload yet, waits for Save)
+    document.getElementById('avatar-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('display-avatar').src = e.target.result;
+                showToast('Image selected. Click "Save Changes" to apply.', 'text-bg-info');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // --- 4. MAIN SAVE FUNCTION (Handles Text + Avatar in ONE request) ---
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        const formData = new FormData(e.target);
+
+        // Your backend route is PUT /profile/me
+        try {
+            const res = await fetch(`${API_BASE}/profile/me`, {
+                method: 'PUT',
+                body: formData
+            });
+            
+            const data = await res.json();
+            
+            if(res.ok) {
+                showToast('Profile updated successfully!', 'text-bg-success');
+                // Reload profile data to confirm sync
+                await loadProfile();
+            } else {
+                showToast(data.error || 'Update failed', 'text-bg-danger');
+            }
+        } catch(e) {
+            console.error(e);
+            showToast('Server error', 'text-bg-danger');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+        }
+    });
+
+    function showToast(msg, bgClass) {
+        const el = document.getElementById('liveToast');
+        document.getElementById('toast-message').textContent = msg;
+        el.className = `toast align-items-center border-0 ${bgClass}`;
+        new bootstrap.Toast(el).show();
+    }
+</script>
 {% endblock %}

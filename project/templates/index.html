@@ -1,389 +1,449 @@
 {% extends "base.html" %}
-{% block title %}Event Calendar — Home{% endblock %}
+{% block title %}Discover — Event Calendar{% endblock %}
 
 {% block content %}
-<!-- Backend Status Banner -->
-<div id="backend-status" class="backend-status" style="display:none;">
-  <div class="container">
-    <div class="status-content">
-      <span class="status-dot"></span>
-      <span class="status-text">Checking backend...</span>
+<style>
+    /* --- COLOR & CONTRAST OVERRIDES --- */
+    .text-gray-300 { color: #cbd5e1 !important; }
+    .text-gray-400 { color: #94a3b8 !important; }
+    
+    /* Search Bar Contrast */
+    .control-deck {
+        background: rgba(30, 41, 59, 0.6); /* Slate 800 */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+    
+    .search-input-group {
+        background-color: #020617; /* Very dark slate */
+        border: 1px solid #334155;
+        border-radius: 50px;
+    }
+    .search-input-group input {
+        color: #fff !important; /* Force white text */
+        font-weight: 500;
+    }
+    .search-input-group input::placeholder {
+        color: #64748b;
+    }
+
+    /* Segmented Control */
+    .segmented-btn {
+        color: #94a3b8;
+    }
+    .segmented-btn:hover {
+        color: #fff;
+    }
+    .segmented-btn.active {
+        background-color: #334155;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    /* --- INFO GUIDE & STATS (Updated) --- */
+    .source-guide {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 12px;
+    }
+    .source-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+    .source-item:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .stat-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+        margin-left: auto; /* Pushes badge to the right */
+    }
+
+    /* --- EVENT CARD IMPROVEMENTS --- */
+    .event-card {
+        background-color: #1e293b; 
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .event-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+    
+    /* High Contrast Badges */
+    .badge-float {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        z-index: 2;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-official { background-color: #22d3ee; color: #0f172a; }
+    .badge-community { background-color: #4ade80; color: #0f172a; }
+
+    /* Form Select */
+    .form-select-custom {
+        background-color: #020617;
+        color: #fff;
+        border-color: #334155;
+        border-radius: 50px;
+    }
+</style>
+
+<!-- Header & Data Guide -->
+<div class="container pt-5 pb-4">
+    <div class="row align-items-end mb-4">
+        <div class="col-lg-7">
+            <h2 class="fw-bold text-white mb-1">Explore Events</h2>
+            <p class="text-gray-400 mb-0">Discover Singapore's vibrant art scene.</p>
+        </div>
+        <div class="col-lg-5 text-lg-end">
+            <div class="d-inline-block text-end">
+                <span class="text-gray-400 small text-uppercase fw-bold" style="letter-spacing: 1px;">Total Events</span>
+                <div class="display-6 fw-bold text-white lh-1" id="stat-total">0</div>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- NEW: Integrated Source Guide & Stats -->
+    <div class="source-guide p-3 mb-2">
+        <div class="row g-0">
+            <!-- Official Source -->
+            <div class="col-md-6 border-end border-secondary border-opacity-25">
+                <div class="source-item me-md-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-info text-dark rounded-circle me-3" style="width:12px; height:12px; padding:0;"></span>
+                        <div class="d-flex flex-column">
+                            <span class="text-white fw-bold">Official Sources</span>
+                            <span class="text-gray-400 small" style="font-size: 0.75rem;">Aggregated from ArtsRepublic, EventFinda & Gov.sg</span>
+                        </div>
+                    </div>
+                    <!-- LIVE COUNT RESTORED -->
+                    <span class="stat-badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" id="stat-official">0</span>
+                </div>
+            </div>
+
+            <!-- Community Source -->
+            <div class="col-md-6">
+                <div class="source-item ms-md-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success text-dark rounded-circle me-3" style="width:12px; height:12px; padding:0;"></span>
+                        <div class="d-flex flex-column">
+                            <span class="text-white fw-bold">Community</span>
+                            <span class="text-gray-400 small" style="font-size: 0.75rem;">User-submitted local gigs, workshops, and meetups</span>
+                        </div>
+                    </div>
+                    <!-- LIVE COUNT RESTORED -->
+                    <span class="stat-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" id="stat-community">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="page-home">
-  <div class="container">
-    <section class="hero">
-      <h1>Everything worth lah</h1>
-      <p class="sub">Discover the latest local arts and culture events near you!</p>
+<!-- Main Controls & Grid -->
+<div class="container pb-5">
 
-      <!-- Event Statistics -->
-      <div id="event-stats" class="event-stats"></div>
+    <!-- CONTROL DECK -->
+    <div class="control-deck mb-5 shadow-lg">
+        <div class="row g-3 align-items-center">
+            
+            <!-- 1. Search Bar -->
+            <div class="col-lg-5">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text bg-transparent border-0 ps-3"><i class="bi bi-search text-gray-400"></i></span>
+                    <input type="text" class="form-control border-0 bg-transparent" id="searchInput" placeholder="Search events, venues, keywords...">
+                </div>
+            </div>
 
-      <div class="catbar" id="catbar">
-        <button class="pill active" data-cat="all">All</button>
-        <button class="pill" data-cat="preferences" id="preferences-filter" style="display: none;">
-          My Preferences
-        </button>
-        <button class="pill" data-cat="music">Music</button>
-        <button class="pill" data-cat="theatre">Theatre</button>
-        <button class="pill" data-cat="comedy">Comedy</button>
-        <button class="pill" data-cat="film">Film</button>
-        <button class="pill" data-cat="visual-arts">Visual Arts</button>
-        <button class="pill" data-cat="workshops">Workshops</button>
-        <span class="filter-divider">|</span>
-        <button class="pill source-pill active" data-source="official">Official</button>
-        <button class="pill source-pill" data-source="community">Community</button>
-      </div>
+            <!-- 2. Source Filters -->
+            <div class="col-lg-4 text-center">
+                <div class="segmented-control d-inline-flex bg-dark rounded-pill p-1 border border-secondary">
+                    <button class="segmented-btn btn btn-sm rounded-pill px-3 active" onclick="setSource('all')" id="btn-all">All</button>
+                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('official')" id="btn-official">Official</button>
+                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('community')" id="btn-community">Community</button>
+                </div>
+            </div>
 
-      <div class="search">
-        <input class="input" id="q" type="search" placeholder="Search events, venues, or tags…">
-        <button class="btn btn-primary" id="searchBtn">Search</button>
-      </div>
-    </section>
-  </div>
-
-  <section class="section">
-    <div class="container">
-      <div class="grid grid-3" id="event-list"></div>
-      <div id="empty" class="meta" style="display:none">No events match your filters.</div>
-
-      <!-- Pagination Controls -->
-      <div id="pagination" class="pagination" style="display:none;">
-        <button id="prevBtn" class="btn btn-secondary">← Previous</button>
-        <div class="pagination-info">
-          <span id="pageInfo">Page 1 of 1</span>
-          <span id="itemInfo" class="item-count"></span>
+            <!-- 3. Category Select -->
+            <div class="col-lg-3">
+                <select class="form-select form-select-custom" id="categoryFilter">
+                    <option value="all" selected>All Categories</option>
+                    <option value="preferences" id="prefOption" style="display:none;">♥ For You</option>
+                    <hr>
+                    <option value="music">Music</option>
+                    <option value="theatre">Theatre</option>
+                    <option value="visual-arts">Visual Arts</option>
+                    <option value="workshops">Workshops</option>
+                    <option value="comedy">Comedy</option>
+                    <option value="film">Film</option>
+                </select>
+            </div>
         </div>
-        <button id="nextBtn" class="btn btn-secondary">Next →</button>
-      </div>
     </div>
-  </section>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-gray-400">Syncing databases...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+        <div class="mb-3">
+            <i class="bi bi-folder2-open display-1 text-secondary opacity-25"></i>
+        </div>
+        <h4 class="text-white">No events found</h4>
+        <p class="text-gray-400">We couldn't find anything matching your filters.</p>
+        <button class="btn btn-primary rounded-pill px-4" onclick="resetFilters()">View All Events</button>
+    </div>
+
+    <!-- EVENTS GRID -->
+    <div id="eventsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <!-- JS Injects Cards Here -->
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="d-flex justify-content-center mt-5">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm" id="pagination"></ul>
+        </nav>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script type="module">
-  import { fetchAllEvents, renderEvents, getEventStats } from '/static/js/events.js';
+<script>
+    const state = {
+        allEvents: [],
+        filteredEvents: [],
+        currentPage: 1,
+        itemsPerPage: 9,
+        filters: { source: 'all', category: 'all', search: '' },
+        userPreferences: []
+    };
 
-  const state = {
-    cat: 'all',
-    source: 'official', // Default to showing official events
-    q: '',
-    allEvents: [],
-    filteredEvents: [],
-    loading: false,
-    currentPage: 1,
-    eventsPerPage: 12, // Show 12 events per page (4 rows of 3)
-    userPreferences: [], // User's preferred tag names
-    isLoggedIn: false
-  };
-
-  // Check backend health on page load
-  async function checkBackend() {
-    const banner = document.getElementById('backend-status');
-    const statusText = banner.querySelector('.status-text');
-
-    try {
-      const response = await fetch('/api/health');
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        banner.style.display = 'block';
-        banner.classList.remove('error');
-        banner.classList.add('success');
-        statusText.textContent = '✓ ' + data.message;
-
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-          banner.style.display = 'none';
-        }, 5000);
-      }
-    } catch (error) {
-      banner.style.display = 'block';
-      banner.classList.add('error');
-      statusText.textContent = '✗ Backend connection failed';
-      console.error('Backend error:', error);
-    }
-  }
-
-  async function fetchEvents() {
-    if (state.loading) return;
-
-    state.loading = true;
-    const list = document.getElementById('event-list');
-    const empty = document.getElementById('empty');
-
-    // Show loading state
-    list.innerHTML = '<div class="loading">Loading events...</div>';
-    empty.style.display = 'none';
-    hidePagination();
-
-    try {
-      // Fetch all events without category filter - we'll filter on frontend
-      const response = await fetchAllEvents('all', state.q);
-
-      if (response.status === 'success') {
-        state.allEvents = response.events;
-        state.currentPage = 1; // Reset to first page
-
-        // Update stats display if exists
-        updateStats(response);
-
-        // Apply source and category filters on frontend
-        applyFilters();
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      list.innerHTML = '';
-      empty.style.display = 'block';
-      empty.textContent = 'Error loading events. Please try again later.';
-      hidePagination();
-    } finally {
-      state.loading = false;
-    }
-  }
-
-  function renderCurrentPage() {
-    const list = document.getElementById('event-list');
-    const empty = document.getElementById('empty');
-
-    if (state.filteredEvents.length === 0) {
-      list.innerHTML = '';
-      empty.style.display = 'block';
-      empty.textContent = state.q
-        ? `No events found matching "${state.q}"`
-        : 'No events match your filters.';
-      hidePagination();
-      return;
-    }
-
-    // Calculate pagination
-    const totalPages = Math.ceil(state.filteredEvents.length / state.eventsPerPage);
-    const startIndex = (state.currentPage - 1) * state.eventsPerPage;
-    const endIndex = startIndex + state.eventsPerPage;
-    const eventsToDisplay = state.filteredEvents.slice(startIndex, endIndex);
-
-    // Render events for current page
-    renderEvents(eventsToDisplay, list);
-    empty.style.display = 'none';
-
-    // Update pagination controls
-    updatePagination(totalPages, startIndex, endIndex);
-
-    // Scroll to top of event list
-    document.getElementById('event-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  function updatePagination(totalPages, startIndex, endIndex) {
-    const pagination = document.getElementById('pagination');
-    const pageInfo = document.getElementById('pageInfo');
-    const itemInfo = document.getElementById('itemInfo');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-
-    if (totalPages <= 1) {
-      hidePagination();
-      return;
-    }
-
-    // Show pagination
-    pagination.style.display = 'flex';
-
-    // Update page info
-    pageInfo.textContent = `Page ${state.currentPage} of ${totalPages}`;
-    itemInfo.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, state.filteredEvents.length)} of ${state.filteredEvents.length} events`;
-
-    // Update button states
-    prevBtn.disabled = state.currentPage === 1;
-    nextBtn.disabled = state.currentPage === totalPages;
-  }
-
-  function hidePagination() {
-    const pagination = document.getElementById('pagination');
-    pagination.style.display = 'none';
-  }
-
-  function goToPage(page) {
-    const totalPages = Math.ceil(state.filteredEvents.length / state.eventsPerPage);
-    if (page < 1 || page > totalPages) return;
-
-    state.currentPage = page;
-    renderCurrentPage();
-  }
-
-  function applyFilters() {
-    // Apply source filter to allEvents (official or community)
-    let filtered = state.allEvents.filter(event => event.source === state.source);
-    
-    // Apply category filter
-    if (state.cat === 'preferences' && state.userPreferences.length > 0) {
-      // Filter by user's preferred tags
-      filtered = filtered.filter(event => {
-        // Check if any of the user's preferred tags match the event's tags or category
-        return state.userPreferences.some(pref => {
-          const normalizedPref = pref.toLowerCase().replace(/\s+/g, '-');
-          
-          // Check against event's tags array (for community events with custom tags like "Cat", "Dog")
-          if (event.tags && Array.isArray(event.tags)) {
-            const hasMatchingTag = event.tags.some(tag => {
-              const normalizedTag = tag.toLowerCase().replace(/\s+/g, '-');
-              return normalizedTag === normalizedPref;
-            });
-            if (hasMatchingTag) return true;
-          }
-          
-          // Also check against event's category (for official events and mapped categories)
-          if (event.category) {
-            const normalizedCategory = event.category.toLowerCase().replace(/\s+/g, '-');
-            return normalizedCategory === normalizedPref;
-          }
-          
-          return false;
+    async function init() {
+        await loadUserPreferences();
+        await fetchEvents();
+        
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            state.filters.search = e.target.value;
+            applyFilters();
         });
-      });
-    } else if (state.cat !== 'all') {
-      // Filter by specific category (music, theatre, comedy, etc.)
-      filtered = filtered.filter(event => {
-        // Check event's category
-        if (event.category) {
-          const normalizedCategory = event.category.toLowerCase().replace(/\s+/g, '-');
-          if (normalizedCategory === state.cat) return true;
-        }
-        
-        // Also check event's tags array (for community events)
-        // This allows community events with tags like "music", "theatre" to show up
-        if (event.tags && Array.isArray(event.tags)) {
-          return event.tags.some(tag => {
-            const normalizedTag = tag.toLowerCase().replace(/\s+/g, '-');
-            return normalizedTag === state.cat;
-          });
-        }
-        
-        return false;
-      });
+        document.getElementById('categoryFilter').addEventListener('change', (e) => {
+            state.filters.category = e.target.value;
+            applyFilters();
+        });
     }
-    
-    state.filteredEvents = filtered;
-    state.currentPage = 1; // Reset to first page
-    renderCurrentPage();
-  }
-  
-  // Load user preferences
-  async function loadUserPreferences() {
-    try {
-      const res = await fetch('/api/preferences/me', {
-        credentials: 'include'
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        state.isLoggedIn = true;
-        
-        // Extract tag names from the tags array
-        state.userPreferences = data.tags.map(tag => tag.tag_name);
-        
-        // Show the "My Preferences" button if user has preferences
-        if (state.userPreferences.length > 0) {
-          const prefsBtn = document.getElementById('preferences-filter');
-          if (prefsBtn) {
-            prefsBtn.style.display = 'inline-block';
-            prefsBtn.textContent = `My Preferences (${state.userPreferences.length})`;
-          }
-        }
-      } else if (res.status === 401) {
-        // User not logged in - that's okay
-        state.isLoggedIn = false;
-      }
-    } catch (error) {
-      console.error('Error loading preferences:', error);
-      state.isLoggedIn = false;
-    }
-  }
 
-  function updateStats(response) {
-    // Update the page with event statistics
-    const statsElement = document.getElementById('event-stats');
-    if (statsElement) {
-      statsElement.innerHTML = `
-        <span class="stat">Total: ${response.total}</span>
-        <span class="stat">Official: ${response.official_count}</span>
-        <span class="stat">Community: ${response.community_count}</span>
-      `;
-    }
-  }
+    async function fetchEvents() {
+        const loader = document.getElementById('loading');
+        loader.style.display = 'block';
+        document.getElementById('eventsGrid').style.display = 'none';
 
-  // Category and Source filter handler
-  document.getElementById('catbar').addEventListener('click', e => {
-    if (e.target.classList.contains('pill')) {
-      // Handle source filter (official/community)
-      if (e.target.dataset.source) {
-        document.querySelectorAll('.source-pill').forEach(p => p.classList.remove('active'));
-        e.target.classList.add('active');
-        state.source = e.target.dataset.source;
+        try {
+            const res = await fetch(`/api/all-events?source=all&category=all`);
+            const data = await res.json();
+            
+            if(data.status === 'success') {
+                state.allEvents = data.events;
+                
+                // UPDATE THE STATS BOARD
+                document.getElementById('stat-total').textContent = data.total;
+                document.getElementById('stat-official').textContent = data.official_count;
+                document.getElementById('stat-community').textContent = data.community_count;
+                
+                applyFilters();
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            loader.style.display = 'none';
+            document.getElementById('eventsGrid').style.display = 'flex';
+        }
+    }
+
+    async function loadUserPreferences() {
+        try {
+            const res = await fetch('/api/preferences/me');
+            if(res.ok) {
+                const data = await res.json();
+                state.userPreferences = data.tags.map(t => t.tag_name);
+                const opt = document.getElementById('prefOption');
+                opt.style.display = 'block';
+                opt.text = `♥ For You (${state.userPreferences.length} tags)`;
+            }
+        } catch(e) {}
+    }
+
+    function setSource(source) {
+        state.filters.source = source;
+        document.querySelectorAll('.segmented-btn').forEach(btn => btn.classList.remove('active'));
+        if(source === 'all') document.getElementById('btn-all').classList.add('active');
+        if(source === 'official') document.getElementById('btn-official').classList.add('active');
+        if(source === 'community') document.getElementById('btn-community').classList.add('active');
         applyFilters();
-      }
-      // Handle category filter
-      else if (e.target.dataset.cat) {
-        document.querySelectorAll('.pill:not(.source-pill)').forEach(p => p.classList.remove('active'));
-        e.target.classList.add('active');
-        state.cat = e.target.dataset.cat;
-        
-        // If switching to "My Preferences", just apply filters without fetching
-        if (state.cat === 'preferences') {
-          applyFilters();
-        } else {
-          fetchEvents();
+    }
+
+    function applyFilters() {
+        let results = state.allEvents;
+
+        if(state.filters.source !== 'all') {
+            results = results.filter(e => e.source === state.filters.source);
         }
-      }
+
+        if(state.filters.category === 'preferences') {
+            if(state.userPreferences.length > 0) {
+                results = results.filter(e => {
+                    if(e.category && state.userPreferences.includes(e.category)) return true;
+                    if(e.tags && e.tags.some(t => state.userPreferences.includes(t))) return true;
+                    return false;
+                });
+            }
+        } else if(state.filters.category !== 'all') {
+            results = results.filter(e => e.category === state.filters.category);
+        }
+
+        if(state.filters.search) {
+            const term = state.filters.search.toLowerCase();
+            results = results.filter(e => 
+                (e.title && e.title.toLowerCase().includes(term)) || 
+                (e.venue && e.venue.toLowerCase().includes(term))
+            );
+        }
+
+        state.filteredEvents = results;
+        state.currentPage = 1;
+        renderPage();
     }
-  });
 
-  // Search button handler
-  document.getElementById('searchBtn').addEventListener('click', () => {
-    state.q = document.getElementById('q').value.trim();
-    fetchEvents();
-  });
-
-  // Search on Enter key
-  document.getElementById('q').addEventListener('keypress', e => {
-    if (e.key === 'Enter') {
-      state.q = e.target.value.trim();
-      fetchEvents();
+    function resetFilters() {
+        state.filters.search = '';
+        state.filters.category = 'all';
+        state.filters.source = 'all';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('categoryFilter').value = 'all';
+        setSource('all');
     }
-  });
 
-  // Pagination button handlers
-  document.getElementById('prevBtn').addEventListener('click', () => {
-    goToPage(state.currentPage - 1);
-  });
+    function renderPage() {
+        const grid = document.getElementById('eventsGrid');
+        const empty = document.getElementById('emptyState');
+        grid.innerHTML = '';
 
-  document.getElementById('nextBtn').addEventListener('click', () => {
-    goToPage(state.currentPage + 1);
-  });
+        if(state.filteredEvents.length === 0) {
+            empty.style.display = 'block';
+            document.getElementById('pagination').innerHTML = '';
+            return;
+        }
+        empty.style.display = 'none';
 
-  // Keyboard navigation for pagination (Arrow keys)
-  document.addEventListener('keydown', (e) => {
-    // Only handle arrow keys if not typing in input field
-    if (document.activeElement.tagName === 'INPUT') return;
+        const start = (state.currentPage - 1) * state.itemsPerPage;
+        const end = start + state.itemsPerPage;
+        const items = state.filteredEvents.slice(start, end);
 
-    const totalPages = Math.ceil(state.filteredEvents.length / state.eventsPerPage);
+        items.forEach(event => {
+            grid.innerHTML += createCardHtml(event);
+        });
 
-    if (e.key === 'ArrowLeft' && state.currentPage > 1) {
-      e.preventDefault();
-      goToPage(state.currentPage - 1);
-    } else if (e.key === 'ArrowRight' && state.currentPage < totalPages) {
-      e.preventDefault();
-      goToPage(state.currentPage + 1);
+        renderPagination(Math.ceil(state.filteredEvents.length / state.itemsPerPage));
     }
-  });
 
-  // Initialize on page load
-  document.addEventListener('DOMContentLoaded', async () => {
-    checkBackend();
-    await loadUserPreferences(); // Load preferences first
-    fetchEvents();
-  });
+    function createCardHtml(event) {
+        const fallback = "https://placehold.co/600x400/1e293b/475569?text=No+Image";
+        const img = event.image ? event.image : fallback;
+        
+        let badgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
+        let badgeText = event.source === 'official' ? 'Official' : 'Community';
+        
+        return `
+        <div class="col">
+            <div class="event-card h-100 d-flex flex-column">
+                <div style="position: relative; height: 200px;">
+                    <span class="badge-float ${badgeClass}">${badgeText}</span>
+                    <img src="${img}" style="width:100%; height:100%; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                </div>
+                <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                    <small class="text-info fw-bold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">
+                        ${event.category || 'EVENT'}
+                    </small>
+                    
+                    <h5 class="text-white fw-bold mb-3 text-truncate" title="${event.title}">
+                        ${event.title}
+                    </h5>
+                    
+                    <div class="mt-auto">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-calendar3 text-gray-400 me-2"></i>
+                            <span class="text-gray-300 small">${event.date}</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-geo-alt-fill text-gray-400 me-2"></i>
+                            <span class="text-gray-300 small text-truncate">${event.venue}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 border-top border-secondary" style="border-color: rgba(255,255,255,0.08) !important;">
+                    <a href="/event-detail?id=${event.id}" class="btn btn-outline-light btn-sm w-100 rounded-pill">View Details</a>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    function renderPagination(totalPages) {
+        const pag = document.getElementById('pagination');
+        pag.innerHTML = '';
+        if(totalPages <= 1) return;
+
+        let startPage = Math.max(1, state.currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        
+        // Prev
+        pag.innerHTML += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
+            <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage-1})">←</button>
+        </li>`;
+
+        for(let i = startPage; i <= endPage; i++) {
+            const active = i === state.currentPage ? 'bg-primary border-primary' : 'bg-dark text-white border-secondary';
+            pag.innerHTML += `<li class="page-item active">
+                <button class="page-link ${active}" onclick="goTo(${i})">${i}</button>
+            </li>`;
+        }
+
+        // Next
+        pag.innerHTML += `<li class="page-item ${state.currentPage === totalPages ? 'disabled' : ''}">
+            <button class="page-link bg-dark text-white border-secondary" onclick="goTo(${state.currentPage+1})">→</button>
+        </li>`;
+    }
+
+    function goTo(page) {
+        state.currentPage = page;
+        renderPage();
+        document.getElementById('eventsGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Expose global
+    window.setSource = setSource;
+    window.resetFilters = resetFilters;
+    window.goTo = goTo;
+
+    document.addEventListener('DOMContentLoaded', init);
 </script>
 {% endblock %}
