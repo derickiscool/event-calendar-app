@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="container py-5">
+    <div class="row mb-4 text-center">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="display-4 fw-bold text-white mb-2">Connecting Singapore's Culture</h1>
+            <p class="lead text-light opacity-75">
+                One platform. Two databases. Infinite experiences.
+            </p>
+        </div>
+    </div>
+
+    <!-- The "Why" Section -->
+    <div class="row g-4 align-items-stretch mb-5">
+        <div class="col-md-6">
+            <div class="p-4 bg-dark-subtle rounded-3 border border-secondary shadow-sm h-100">
+                <h3 class="text-gradient fw-bold mb-3">The Challenge</h3>
+                <p class="text-secondary">
+                    Discovering local arts and culture events in Singapore is often a fragmented experience.
+                    With over <strong>400 events on catch.sg</strong>, <strong>140+ on Peatix</strong>, and hundreds
+                    more on
+                    government portals, finding the right activity can be daunting.
+                </p>
+                <p class="text-secondary mb-0">
+                    Information is scattered. Users are overwhelmed. The demand is there, but the discovery tool was
+                    missing.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="p-4 bg-dark-subtle rounded-3 border border-secondary shadow-sm h-100">
+                <h3 class="text-gradient fw-bold mb-3">The Opportunity</h3>
+                <p class="text-secondary">
+                    Following the pandemic, non-ticketed arts attendance jumped from <strong>4.6 million</strong> to
+                    <strong>5.4 million</strong>. Initiatives like the <strong>SG60 Budget</strong> are putting $100
+                    worth of culture credits into the hands of Singaporeans.
+                </p>
+                <p class="text-secondary mb-0">
+                    The appetite for local arts has never been higher. We built this platform to ensure that
+                    appetite is met with easy, centralized access.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Insights Header -->
+    <div class="row mb-3 mt-4">
+        <div class="col-12 text-center">
+            <h2 class="fw-bold text-white"><i class="bi bi-bar-chart-line me-2"></i>The Data Landscape</h2>
+            <p class="text-muted small">Real-time visualization of Gov.sg data stored in MongoDB</p>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mb-4">
+        <!-- Funding Chart -->
+        <div class="col-md-6">
+            <div class="card h-100 bg-dark border-secondary shadow-sm">
+                <div class="card-body p-3">
+                    <h5 class="card-title text-center mb-3 text-info">
+                        Government Funding Trend ($ Mil)
+                    </h5>
+                    <div style="position: relative; height: 250px;">
+                        <canvas id="fundingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activities Chart -->
+        <div class="col-md-6">
+            <div class="card h-100 bg-dark border-secondary shadow-sm">
+                <div class="card-body p-3">
+                    <h5 class="card-title text-center mb-3 text-success">
+                        Cultural Activities Volume
+                    </h5>
+                    <div style="position: relative; height: 250px;">
+                        <canvas id="activitiesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Our Mission / Conclusion Section -->
+    <!-- Added mt-5 and pt-4 for extra gap -->
+    <div class="row mt-5 pt-4 mb-5">
+        <div class="col-lg-12">
+            <div class="card bg-gradient-dark border-0 shadow-lg text-center p-4"
+                style="background: linear-gradient(135deg, #1a1e21 0%, #212529 100%);">
+                <div class="card-body">
+                    <h2 class="fw-bold text-white mb-3">Our Mission</h2>
+                    <p class="text-secondary mx-auto mb-4" style="max-width: 800px; font-size: 1.1rem;">
+                        To consolidate the fragmented arts landscape into a single, cohesive web application.
+                        By integrating diverse data sources into a unified feed and empowering the community to
+                        contribute their own events, we aim to make Singapore's vibrant culture accessible to everyone.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="btn btn-primary px-4">Explore Events</a>
+
+                        <!-- Logic to hide Register button if logged in -->
+                        {% if session.get('user_id') %}
+                        <a href="/profile" class="btn btn-light fw-bold px-4 text-dark">My Profile</a>
+                        {% else %}
+                        <a href="/register" class="btn btn-outline-light px-4">Join the Community</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack Footer -->
+    <div class="row text-center mb-5">
+        <div class="col-md-8 mx-auto">
+            <span class="badge bg-secondary p-2 opacity-75">Tech Stack: Flask • MariaDB (User Data) • MongoDB
+                (Analytics)</span>
+        </div>
+    </div>
+</div>
+
+<!-- Styles for Text Gradient -->
+<style>
+    .text-gradient {
+        background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+<!-- Chart Logic -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+
+            if (data.error) return;
+
+            // Funding Chart
+            new Chart(document.getElementById('fundingChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: data.years,
+                    datasets: [{
+                        label: 'Funding ($ Mil)',
+                        data: data.funding,
+                        borderColor: '#0dcaf0',
+                        backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: '#333' }, ticks: { color: '#aaa', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // Activities Chart
+            new Chart(document.getElementById('activitiesChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: data.years,
+                    datasets: [{
+                        label: 'Activities',
+                        data: data.activities,
+                        backgroundColor: '#198754',
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#aaa', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 10 } } }
+                    }
+                }
+            });
+
+        } catch (err) {
+            console.error("Chart Error:", err);
+        }
+    });
+</script>
+{% endblock %}

@@ -53,6 +53,7 @@ from .routes.review import review_bp
 from .routes.registered_event import registered_event_bp
 from .routes.event_tag import event_tag_bp
 from .routes.auth import auth_bp
+from .routes.stats import stats_bp
 
 # Configure session secret key (needed for Flask sessions)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
@@ -69,3 +70,4 @@ app.register_blueprint(tag_bp, url_prefix='/api')
 app.register_blueprint(review_bp, url_prefix='/api')
 app.register_blueprint(registered_event_bp, url_prefix='/api')
 app.register_blueprint(event_tag_bp, url_prefix='/api')
+app.register_blueprint(stats_bp, url_prefix ="/api")    

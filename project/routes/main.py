@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, session, redirect, url_for 
 from project.db import get_mongo_status, get_mariadb_status
 
 main_bp = Blueprint('main', __name__)
@@ -10,12 +10,16 @@ def index():
 
 @main_bp.route("/login")
 def login():
-    """Render the login page."""
+    # If already logged in, go to home
+    if "user_id" in session:
+        return redirect(url_for('main.index'))
     return render_template('login.html')
 
 @main_bp.route("/register")
 def register():
-    """Render the register page."""
+    # If already logged in, go to home
+    if "user_id" in session:
+        return redirect(url_for('main.index'))
     return render_template('register.html')
 
 @main_bp.route("/profile")
@@ -47,4 +51,7 @@ def event_detail():
 def bookmarks():
     """Render the bookmarks page."""
     return render_template('bookmarks.html')
-
+@main_bp.route("/about")
+def about():
+    """Renders the Statistics/About page."""
+    return render_template('about.html')
