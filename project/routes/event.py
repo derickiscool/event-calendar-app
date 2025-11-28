@@ -214,47 +214,61 @@ def get_all_events():
         }
     )
 
-
-@event_bp.route("/event/<event_id>", methods=["GET"])
+@event_bp.route("/event/<event_id>", methods=['GET'])
 def get_unified_event(event_id):
-    """Get Single Event (Unified)"""
+    """Get Single Event (Unified) with correct Date formatting"""
     try:
-        if event_id.startswith("official_"):
+        if event_id.startswith('official_'):
             client = get_mongo_client()
-            if not client:
-                return jsonify({"error": "DB Error"}), 500
-
-            event = client.get_database("event_calendar").events.find_one(
-                {"_id": ObjectId(event_id.replace("official_", ""))}
-            )
+            if not client: return jsonify({'error': 'DB Error'}), 500
+            
+            event = client.get_database("event_calendar").events.find_one({'_id': ObjectId(event_id.replace('official_', ''))})
             client.close()
-            if not event:
-                return jsonify({"error": "Not Found"}), 404
+            if not event: return jsonify({'error': 'Not Found'}), 404
+            
+            # [FIX] Ensure 'date' field exists for Frontend
+            start_date_raw = event.get('start_date', '')
+            
+            return jsonify({'status': 'success', 'event': {
+                'id': event_id,
+                'title': event.get('title'),
+                'description': event.get('description'),
+                'start_date': start_date_raw,
+                'date': start_date_raw if start_date_raw else 'Date TBA', # <--- ADDED THIS
+                'venue': event.get('venue_name'),
+                'address': event.get('address'),
+                'image': event.get('image_url'),
+                'registration_link': event.get('registration_link'),
+                'source': 'official'
+            }})
+            
+        elif event_id.startswith('community_'):
+            e = Event.query.get(int(event_id.replace('community_', '')))
+            if not e: return jsonify({'error': 'Not Found'}), 404
+            
+            # [FIX] Format date for frontend
+            formatted_date = e.start_datetime.strftime('%Y-%m-%d %H:%M') if e.start_datetime else 'Date TBA'
+            
+            # Get Venue Name
+            venue_name = e.venue.name if e.venue else "TBA"
+            venue_addr = e.venue.address if e.venue else ""
 
-            return jsonify(
-                {
-                    "status": "success",
-                    "event": {
-                        "id": event_id,
-                        "title": event.get("title"),
-                        "description": event.get("description"),
-                        "start_date": event.get("start_date"),
-                        "venue": event.get("venue_name"),
-                        "image": event.get("image_url"),
-                        "source": "official",
-                    },
-                }
-            )
-
-        elif event_id.startswith("community_"):
-            e = Event.query.get(int(event_id.replace("community_", "")))
-            if not e:
-                return jsonify({"error": "Not Found"}), 404
-            return jsonify({"status": "success", "event": e.as_dict()})
-
+            return jsonify({'status': 'success', 'event': {
+                'id': f"community_{e.id}",
+                'title': e.title,
+                'description': e.description,
+                'start_date': e.start_datetime.isoformat() if e.start_datetime else '',
+                'date': formatted_date, # <--- ADDED THIS
+                'venue': venue_name,
+                'address': venue_addr,
+                'image': e.image_url,
+                'source': 'community',
+                'creator_id': e.user_id
+            }})
+            
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
+        print(f"Error fetching event: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # GET user's own events
 @event_bp.route("/events/my-events", methods=["GET"])

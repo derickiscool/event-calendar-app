@@ -1,12 +1,15 @@
-import requests 
+import os
+import requests
 from bs4 import BeautifulSoup
-import json 
 from dotenv import load_dotenv
+from project import app
 from project.db import get_mongo_client
+from project.models import db, EventCache
 
+# Load environment variables
 load_dotenv()
 
-# --- STATISTICS FUNCTIONS ---
+# --- STATISTICS FUNCTIONS (KEPT ORIGINAL) ---
 
 def fetch_gov_statistics():
     """Fetches arts and culture statistics from data.gov.sg API."""
@@ -29,16 +32,13 @@ def fetch_gov_statistics():
     return all_stats
 
 def transform_and_load_statistics(client, stats_data):
-    """
-    Transforms and loads statistics into the 'statistics' collection,
-    with one document per year, using upsert to avoid duplicates.
-    """
+    """Transforms and loads statistics into the 'statistics' collection."""
     if not client or not stats_data:
         print("No client or statistics data provided.")
         return
         
-    db = client.get_database("event_calendar") 
-    statistics_collection = db.statistics
+    db_mongo = client.get_database("event_calendar") 
+    statistics_collection = db_mongo.statistics
 
     stats_by_year = {}
     
@@ -74,7 +74,6 @@ def transform_and_load_statistics(client, stats_data):
         print("No statistics data found to load.")
         return
 
-    # Iterate through each year and upsert the document
     upserted_count = 0
     modified_count = 0
     for year, data in stats_by_year.items():
@@ -98,55 +97,7 @@ def transform_and_load_statistics(client, stats_data):
     print(f"Statistics Load Complete. Inserted: {upserted_count} years. Updated: {modified_count} years.")
 
 
-# --- EVENT SCRAPING AND LOADING FUNCTIONS ---
-
-def transform_and_load_events(client, events_data, site_name):
-    """Transforms scraped event data and upserts it into the 'events' collection."""
-    if not client or not events_data:
-        return
-    
-    db = client.get_database("event_calendar") 
-    events_collection = db.events
-
-    upserted_count = 0
-    modified_count = 0
-    skipped_count = 0
-
-    for event in events_data:
-        # Basic validation to skip incomplete event data
-        if not event.get("title") or "not found" in event.get("title").lower() or not event.get("source"):
-            print(f"Skipping invalid event data: {event.get('title')}")
-            skipped_count += 1
-            continue
-
-        # This is the document structure that will be saved in MongoDB
-        mongo_event = {
-            "title": event.get("title"),
-            "description": event.get("description", ""),
-            "start_date": event.get("start_date"),
-            "end_date": event.get("end_date"),
-            "venue_name": event.get("venue_name"),
-            "address": event.get("address", ""),
-            "image_url": event.get("image_url"),
-            "registration_link": event.get("registration_link"),
-            "source": event.get("source") 
-        }
-
-        # The 'source' (full URL) is the unique key.
-        # If an event with this URL exists, it's updated. Otherwise, it's inserted.
-        result = events_collection.update_one(
-            {'source': mongo_event['source']},
-            {'$set': mongo_event},
-            upsert=True
-        )
-        
-        if result.upserted_id:
-            upserted_count += 1
-        elif result.modified_count > 0:
-            modified_count += 1
-
-    print(f"'{site_name}' Load Complete. Inserted: {upserted_count}. Updated: {modified_count}. Skipped: {skipped_count}.")
-
+# --- SCRAPING FUNCTIONS (KEPT ORIGINAL) ---
 
 def scrape_artsrepublic_sg():
     """Scrapes event data from ArtsRepublic.sg."""
@@ -161,7 +112,7 @@ def scrape_artsrepublic_sg():
         event_links = soup.select('li a.event_thumbnail')
         
         if not event_links:
-            print("No event links found on artsrepublic.sg. The page structure might have changed.")
+            print("No event links found on artsrepublic.sg.")
             return []
             
         print(f"Found {len(event_links)} event links. Scraping detail pages...")
@@ -176,12 +127,9 @@ def scrape_artsrepublic_sg():
     return scraped_events
 
 def scrape_artsrepublic_detail_page(url):
-    """Scrapes the details from a single event page on ArtsRepublic.sg."""
+    """Scrapes details from ArtsRepublic."""
     try:
-        # --- THE FIX IS HERE ---
-        # Ensure there is exactly one slash between the base URL and the relative path.
         base_url = "https://artsrepublic.sg"
-        # The lstrip('/') handles cases where the href might be '/events/...'
         fullUrl = f"{base_url}/{url.lstrip('/')}"
         
         response = requests.get(fullUrl, timeout=10)
@@ -222,6 +170,7 @@ def scrape_artsrepublic_detail_page(url):
     except requests.exceptions.RequestException as e:
         print(f"Error scraping detail page {url}: {e}")
         return None
+
 def scrape_eventfinda_sg():
     """Scrapes event data from Eventfinda.sg."""
     list_page_url = "https://www.eventfinda.sg/whatson/events/singapore"
@@ -236,7 +185,7 @@ def scrape_eventfinda_sg():
         event_cards = soup.select('div.card.h-event')
         
         if not event_cards:
-            print("No event links found on eventfinda.sg. The page structure might have changed.")
+            print("No event links found on eventfinda.sg.")
             return []
             
         print(f"Found {len(event_cards)} event links. Scraping detail pages...")
@@ -252,7 +201,7 @@ def scrape_eventfinda_sg():
     return scraped_events
 
 def scrape_eventfinda_detail_page(url):
-    """Scrapes the details from a single event page on Eventfinda."""
+    """Scrapes details from Eventfinda."""
     try:
         full_url = "https://www.eventfinda.sg" + url
         response = requests.get(full_url, timeout=10)
@@ -286,26 +235,122 @@ def scrape_eventfinda_detail_page(url):
         print(f"Error scraping detail page {url}: {e}")
         return None
 
+
+# --- UPDATED LOAD FUNCTION (SYNC MONGODB + MYSQL CACHE) ---
+
+def transform_and_load_events(client, events_data, site_name):
+    """
+    1. Upserts events into MongoDB 'events' collection.
+    2. Upserts same events into MySQL 'event_cache' table (The Universal Adapter).
+    """
+    if not client or not events_data:
+        return
+    
+    db_mongo = client.get_database("event_calendar") 
+    events_collection = db_mongo.events
+
+    upserted_count = 0
+    modified_count = 0
+    skipped_count = 0
+    cached_count = 0
+
+    for event in events_data:
+        # Basic validation
+        if not event.get("title") or "not found" in event.get("title").lower() or not event.get("source"):
+            print(f"Skipping invalid event data: {event.get('title')}")
+            skipped_count += 1
+            continue
+
+        mongo_event = {
+            "title": event.get("title"),
+            "description": event.get("description", ""),
+            "start_date": event.get("start_date"),
+            "end_date": event.get("end_date"),
+            "venue_name": event.get("venue_name"),
+            "address": event.get("address", ""),
+            "image_url": event.get("image_url"),
+            "registration_link": event.get("registration_link"),
+            "source": event.get("source") 
+        }
+
+        # --- A. MongoDB Upsert ---
+        result = events_collection.update_one(
+            {'source': mongo_event['source']},
+            {'$set': mongo_event},
+            upsert=True
+        )
+        
+        mongo_id = None
+        if result.upserted_id:
+            upserted_count += 1
+            mongo_id = str(result.upserted_id)
+        elif result.modified_count > 0:
+            modified_count += 1
+            # Retrieve existing ID
+            doc = events_collection.find_one({'source': mongo_event['source']})
+            mongo_id = str(doc['_id'])
+        else:
+            # No change, but we still need ID for cache check
+            doc = events_collection.find_one({'source': mongo_event['source']})
+            if doc:
+                mongo_id = str(doc['_id'])
+
+        # --- B. MySQL Cache Upsert ---
+        if mongo_id:
+            try:
+                event_identifier = f"official_{mongo_id}"
+                
+                # Check if exists in cache
+                existing_cache = EventCache.query.get(event_identifier)
+                
+                if not existing_cache:
+                    new_cache = EventCache(
+                        event_identifier=event_identifier,
+                        source='official',
+                        original_id=mongo_id,
+                        title=mongo_event['title'][:255] # Truncate for SQL safety
+                    )
+                    db.session.add(new_cache)
+                    cached_count += 1
+                else:
+                    # Sync title if changed
+                    if existing_cache.title != mongo_event['title'][:255]:
+                        existing_cache.title = mongo_event['title'][:255]
+                
+                # Commit frequently to keep connection fresh
+                db.session.commit()
+                
+            except Exception as e:
+                print(f"MySQL Cache Error for {mongo_event['title']}: {e}")
+                db.session.rollback()
+
+    print(f"'{site_name}' Load Complete. Mongo: +{upserted_count}/~{modified_count}. MySQL Cache Updated.")
+
+
 # --- MAIN EXECUTION BLOCK ---
 
 if __name__ == "__main__":
-    mongo_client = get_mongo_client()
-    if mongo_client:
-        # Load Statistics
-        statistics_data = fetch_gov_statistics()
-        transform_and_load_statistics(mongo_client, statistics_data)
+    print("--- Starting Full Data Synchronization ---")
 
-        # Load Events from ArtsRepublic
-        artsrepublic_events = scrape_artsrepublic_sg()
-        if artsrepublic_events: 
-            transform_and_load_events(mongo_client, artsrepublic_events, "artsrepublic.sg")
-        
-        # Load Events from Eventfinda
-        eventfinda_events = scrape_eventfinda_sg()
-        if eventfinda_events: 
-            transform_and_load_events(mongo_client, eventfinda_events, "eventfinda.sg")
-        
-        mongo_client.close()
-        print("\nMongoDB connection closed.")
-    else:
-        print("Could not connect to MongoDB. Aborting script.")
+    
+    with app.app_context():
+        mongo_client = get_mongo_client()
+        if mongo_client:
+            # 1. Load Statistics
+            statistics_data = fetch_gov_statistics()
+            transform_and_load_statistics(mongo_client, statistics_data)
+
+            # 2. Load Events from ArtsRepublic
+            artsrepublic_events = scrape_artsrepublic_sg()
+            if artsrepublic_events: 
+                transform_and_load_events(mongo_client, artsrepublic_events, "artsrepublic.sg")
+            
+            # 3. Load Events from Eventfinda
+            eventfinda_events = scrape_eventfinda_sg()
+            if eventfinda_events: 
+                transform_and_load_events(mongo_client, eventfinda_events, "eventfinda.sg")
+            
+            mongo_client.close()
+            print("\nMongoDB connection closed. Sync finished.")
+        else:
+            print("Could not connect to MongoDB. Aborting script.")

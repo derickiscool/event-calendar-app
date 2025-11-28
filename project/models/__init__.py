@@ -12,3 +12,4 @@ from .event import Event
 from .event_tag import EventTag
 from .registered_event import RegisteredEvent
 from .review import Review
+from .event_cache import EventCache
