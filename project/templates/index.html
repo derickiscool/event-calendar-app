@@ -228,15 +228,29 @@
                         placeholder="Search events...">
                 </div>
             </div>
-
             <div class="col-lg-6 text-center text-lg-end">
-                <div class="segmented-control d-inline-flex bg-dark rounded-pill p-1 border border-secondary">
-                    <button class="segmented-btn btn btn-sm rounded-pill px-3 active" onclick="setSource('all')"
-                        id="btn-all">All</button>
-                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('official')"
-                        id="btn-official">Official</button>
-                    <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('community')"
-                        id="btn-community">Community</button>
+                <div class="d-flex flex-column flex-md-row justify-content-end gap-2 align-items-center">
+
+                    <select
+                        class="form-select form-select-sm bg-dark text-gray-300 border-secondary rounded-pill shadow-sm focus-ring-none"
+                        style="width: auto; min-width: 160px; cursor: pointer;" id="sortSelect"
+                        onchange="handleSortChange(this.value)">
+                        <option value="upcoming|default" selected>📅 Upcoming (Soonest)</option>
+                        <option value="upcoming|title_asc">🔤 Title (A-Z)</option>
+                        <option value="upcoming|title_desc">🔤 Title (Z-A)</option>
+                        <option disabled>──────────</option>
+                        <option value="past|default">🕒 Past Events (Recent)</option>
+                        <option value="past|date_asc">🕒 Past Events (Oldest)</option>
+                    </select>
+
+                    <div class="segmented-control d-inline-flex bg-dark rounded-pill p-1 border border-secondary">
+                        <button class="segmented-btn btn btn-sm rounded-pill px-3 active" onclick="setSource('all')"
+                            id="btn-all">All</button>
+                        <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('official')"
+                            id="btn-official">Official</button>
+                        <button class="segmented-btn btn btn-sm rounded-pill px-3" onclick="setSource('community')"
+                            id="btn-community">Community</button>
+                    </div>
                 </div>
             </div>
 
@@ -294,15 +308,16 @@
 
 {% block scripts %}
 <script>
+    // 1. Update State
     const state = {
         allEvents: [],
         filteredEvents: [],
         currentPage: 1,
         itemsPerPage: 9,
-        filters: { source: 'all', category: 'all', search: '' },
+        // Added 'sort' to filters
+        filters: { source: 'all', category: 'all', search: '', time: 'upcoming', sort: 'default' },
         userPreferences: []
     };
-
     async function init() {
         await loadCategories();
         await loadUserPreferences();
@@ -347,6 +362,33 @@
                 }
             }
         } catch (e) { }
+    }
+    window.handleSortChange = function (value) {
+        // Split value like "upcoming|title_asc"
+        const [time, sort] = value.split('|');
+        state.filters.time = time;
+        state.filters.sort = sort;
+
+        fetchEvents();
+    };
+
+    window.setTime = function (timeVal) {
+        state.filters.time = timeVal;
+
+        // Update UI
+        const btnUpcoming = document.getElementById('btn-time-upcoming');
+        const btnPast = document.getElementById('btn-time-past');
+
+        if (timeVal === 'upcoming') {
+            btnUpcoming.className = 'btn btn-sm btn-light fw-bold';
+            btnPast.className = 'btn btn-sm btn-outline-secondary';
+        } else {
+            btnUpcoming.className = 'btn btn-sm btn-outline-secondary';
+            btnPast.className = 'btn btn-sm btn-light fw-bold';
+        }
+
+        // RE-FETCH from Server (Client-side filtering isn't enough for date logic usually)
+        fetchEvents();
     }
 
     window.setCategory = function (cat, btnElement) {
@@ -447,7 +489,15 @@
         document.getElementById('eventsGrid').style.display = 'none';
 
         try {
-            const res = await fetch(`/api/all-events?source=all&category=all`);
+            const params = new URLSearchParams({
+                source: state.filters.source,
+                category: state.filters.category,
+                time: state.filters.time,
+                sort: state.filters.sort, // Send sort param
+                q: state.filters.search
+            });
+
+            const res = await fetch(`/api/all-events?${params.toString()}`);
             const data = await res.json();
 
             if (data.status === 'success') {

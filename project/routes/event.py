@@ -122,153 +122,191 @@ def _map_tag_to_category(tag_name):
 
 @event_bp.route("/all-events", methods=["GET"])
 def get_all_events():
-    """Unified endpoint for MongoDB + MySQL Events"""
+    """Unified endpoint with Time Filtering & Explicit Sorting"""
     category = request.args.get("category", "all")
     source_filter = request.args.get("source", "all")
+    time_filter = request.args.get("time", "upcoming") 
+    sort_option = request.args.get("sort", "default") # New Parameter
     search_query = request.args.get("q", "").lower()
 
     all_events = []
+    now_str = datetime.now().isoformat()
 
-    # 1. Fetch Mongo
+    # 1. Fetch Mongo (Official)
     try:
         client = get_mongo_client()
         if client:
             db_mongo = client.get_database("event_calendar")
             for e in db_mongo.events.find({}):
-                cat = _categorize_event(
-                    e.get("title", "") + " " + e.get("description", "")
-                )
-                all_events.append(
-                    {
-                        "id": f"official_{str(e['_id'])}",
-                        "title": e.get("title"),
-                        "description": e.get("description"),
-                        "date": e.get("start_date", "TBA"),
-                        "venue": e.get("venue_name"),
-                        "location": e.get("address"),
-                        "image": e.get("image_url"),
-                        "category": cat,
-                        "source": "official",
-                        "start_date": e.get("start_date"),
-                        "tags": [cat],
-                    }
-                )
+                cat = _categorize_event(e.get("title", "") + " " + e.get("description", ""))
+                start_date = e.get("start_date")
+                all_events.append({
+                    "id": f"official_{str(e['_id'])}",
+                    "title": e.get("title"),
+                    "description": e.get("description"),
+                    "date": start_date if start_date else "TBA",
+                    "venue": e.get("venue_name"),
+                    "location": e.get("address"),
+                    "image": e.get("image_url"),
+                    "category": cat,
+                    "source": "official",
+                    "start_date": start_date,
+                    "tags": [cat],
+                })
             client.close()
     except Exception as e:
         print(f"Mongo Error: {e}")
 
-    # 2. Fetch MySQL
+    # 2. Fetch MySQL (Community)
     try:
-        community_events = Event.query.options(
-            joinedload(Event.tags), joinedload(Event.creator)
-        ).all()
+        community_events = Event.query.options(joinedload(Event.tags)).all()
         for e in community_events:
             venue = Venue.query.get(e.venue_id) if e.venue_id else None
             tags = [t.tag.tag_name for t in e.tags] if e.tags else []
             cat = _map_tag_to_category(tags[0]) if tags else "other"
-
-            all_events.append(
-                {
-                    "id": f"community_{e.id}",
-                    "title": e.title,
-                    "description": e.description,
-                    "date": (
-                        e.start_datetime.strftime("%Y-%m-%d %H:%M")
-                        if e.start_datetime
-                        else "TBA"
-                    ),
-                    "venue": venue.name if venue else "TBA",
-                    "location": venue.address if venue else "",
-                    "image": e.image_url,
-                    "category": cat,
-                    "source": "community",
-                    "start_date": (
-                        e.start_datetime.isoformat() if e.start_datetime else ""
-                    ),
-                    "tags": tags,
-                    "creator_id": e.user_id,
-                }
-            )
+            all_events.append({
+                "id": f"community_{e.id}",
+                "title": e.title,
+                "description": e.description,
+                "date": e.start_datetime.strftime("%Y-%m-%d %H:%M") if e.start_datetime else "TBA",
+                "venue": venue.name if venue else "TBA",
+                "location": venue.address if venue else "",
+                "image": e.image_url,
+                "category": cat,
+                "source": "community",
+                "start_date": e.start_datetime.isoformat() if e.start_datetime else "",
+                "tags": tags,
+                "creator_id": e.user_id,
+            })
     except Exception as e:
         print(f"MySQL Error: {e}")
 
-    # 3. Filter & Sort
-    if source_filter != "all":
-        all_events = [e for e in all_events if e["source"] == source_filter]
-    if category != "all":
-        all_events = [e for e in all_events if e["category"] == category]
-    if search_query:
-        all_events = [e for e in all_events if search_query in str(e).lower()]
+    # 3. FILTERING
+    filtered_events = []
+    for e in all_events:
+        # Search
+        if search_query:
+            text = (str(e.get("title")) + " " + str(e.get("venue"))).lower()
+            if search_query not in text: continue
+        # Source
+        if source_filter != "all" and e["source"] != source_filter: continue
+        # Category
+        if category != "all" and e["category"] != category: continue
+        # Time
+        event_date = e.get("start_date")
+        if not event_date: continue
+        
+        if time_filter == "upcoming":
+            if event_date >= now_str: filtered_events.append(e)
+        elif time_filter == "past":
+            if event_date < now_str: filtered_events.append(e)
+        else:
+            filtered_events.append(e)
 
-    all_events.sort(key=lambda x: x.get("start_date") or "9999", reverse=False)
-    official_count = sum(1 for e in all_events if e["source"] == "official")
-    community_count = sum(1 for e in all_events if e["source"] == "community")
+    # 4. SORTING
+    # Determine sort key and direction
+    if sort_option == "title_asc":
+        filtered_events.sort(key=lambda x: x.get("title", "").lower())
+    elif sort_option == "title_desc":
+        filtered_events.sort(key=lambda x: x.get("title", "").lower(), reverse=True)
+    elif sort_option == "date_desc":
+        filtered_events.sort(key=lambda x: x.get("start_date") or "0000", reverse=True)
+    elif sort_option == "date_asc":
+        filtered_events.sort(key=lambda x: x.get("start_date") or "9999", reverse=False)
+    else:
+        # Smart Default: Upcoming = Soonest First, Past = Most Recent First
+        is_reverse = True if time_filter == "past" else False
+        filtered_events.sort(key=lambda x: x.get("start_date") or "9999", reverse=is_reverse)
+
+    # 5. Counts
+    official_count = sum(1 for e in filtered_events if e["source"] == "official")
+    community_count = sum(1 for e in filtered_events if e["source"] == "community")
     
-    return jsonify(
-        {
-            "status": "success",
-            "total": len(all_events),
-            "official_count": official_count,
-            "community_count": community_count,
-            "events": all_events,
-        }
-    )
-
-@event_bp.route("/event/<event_id>", methods=['GET'])
+    return jsonify({
+        "status": "success",
+        "total": len(filtered_events),
+        "official_count": official_count,
+        "community_count": community_count,
+        "events": filtered_events,
+    })
+@event_bp.route("/event/<event_id>", methods=["GET"])
 def get_unified_event(event_id):
-    """Get Single Event (Unified) with correct Date formatting"""
+    """Get Single Event (Unified) with End Date support"""
     try:
-        if event_id.startswith('official_'):
+        if event_id.startswith("official_"):
             client = get_mongo_client()
-            if not client: return jsonify({'error': 'DB Error'}), 500
-            
-            event = client.get_database("event_calendar").events.find_one({'_id': ObjectId(event_id.replace('official_', ''))})
+            if not client:
+                return jsonify({"error": "DB Error"}), 500
+
+            event = client.get_database("event_calendar").events.find_one(
+                {"_id": ObjectId(event_id.replace("official_", ""))}
+            )
             client.close()
-            if not event: return jsonify({'error': 'Not Found'}), 404
-            
-            # [FIX] Ensure 'date' field exists for Frontend
-            start_date_raw = event.get('start_date', '')
-            
-            return jsonify({'status': 'success', 'event': {
-                'id': event_id,
-                'title': event.get('title'),
-                'description': event.get('description'),
-                'start_date': start_date_raw,
-                'date': start_date_raw if start_date_raw else 'Date TBA', # <--- ADDED THIS
-                'venue': event.get('venue_name'),
-                'address': event.get('address'),
-                'image': event.get('image_url'),
-                'registration_link': event.get('registration_link'),
-                'source': 'official'
-            }})
-            
-        elif event_id.startswith('community_'):
-            e = Event.query.get(int(event_id.replace('community_', '')))
-            if not e: return jsonify({'error': 'Not Found'}), 404
-            
-            # [FIX] Format date for frontend
-            formatted_date = e.start_datetime.strftime('%Y-%m-%d %H:%M') if e.start_datetime else 'Date TBA'
-            
-            # Get Venue Name
+            if not event:
+                return jsonify({"error": "Not Found"}), 404
+
+            start_date_raw = event.get("start_date", "")
+
+            return jsonify(
+                {
+                    "status": "success",
+                    "event": {
+                        "id": event_id,
+                        "title": event.get("title"),
+                        "description": event.get("description"),
+                        "start_date": start_date_raw,
+                        "end_date": event.get("end_date"),  # Added this
+                        "date": start_date_raw if start_date_raw else "Date TBA",
+                        "venue": event.get("venue_name"),
+                        "address": event.get("address"),
+                        "image": event.get("image_url"),
+                        "registration_link": event.get("registration_link"),
+                        "source": "official",
+                    },
+                }
+            )
+
+        elif event_id.startswith("community_"):
+            e = Event.query.get(int(event_id.replace("community_", "")))
+            if not e:
+                return jsonify({"error": "Not Found"}), 404
+
+            # Format date for frontend
+            formatted_date = (
+                e.start_datetime.strftime("%Y-%m-%d %H:%M")
+                if e.start_datetime
+                else "Date TBA"
+            )
             venue_name = e.venue.name if e.venue else "TBA"
             venue_addr = e.venue.address if e.venue else ""
 
-            return jsonify({'status': 'success', 'event': {
-                'id': f"community_{e.id}",
-                'title': e.title,
-                'description': e.description,
-                'start_date': e.start_datetime.isoformat() if e.start_datetime else '',
-                'date': formatted_date, # <--- ADDED THIS
-                'venue': venue_name,
-                'address': venue_addr,
-                'image': e.image_url,
-                'source': 'community',
-                'creator_id': e.user_id
-            }})
-            
+            return jsonify(
+                {
+                    "status": "success",
+                    "event": {
+                        "id": f"community_{e.id}",
+                        "title": e.title,
+                        "description": e.description,
+                        "start_date": (
+                            e.start_datetime.isoformat() if e.start_datetime else ""
+                        ),
+                        "end_date": (
+                            e.end_datetime.isoformat() if e.end_datetime else None
+                        ),  # Added this
+                        "date": formatted_date,
+                        "venue": venue_name,
+                        "address": venue_addr,
+                        "image": e.image_url,
+                        "source": "community",
+                        "creator_id": e.user_id,
+                    },
+                }
+            )
+
     except Exception as e:
         print(f"Error fetching event: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
 
 # GET user's own events
 @event_bp.route("/events/my-events", methods=["GET"])

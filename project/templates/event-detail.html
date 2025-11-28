@@ -383,15 +383,45 @@
         document.title = `${event.title} — Event Calendar`;
         els.title.textContent = event.title;
         els.img.src = event.image_url || event.image || "https://placehold.co/1200x600/1e293b/475569?text=Event+Image";
-        els.date.textContent = event.date || 'TBA';
         els.venue.textContent = event.venue || 'TBA';
+
+        // --- NEW: Smart Date & Time Formatting ---
+        if (event.start_date) {
+            const start = new Date(event.start_date);
+            const dateOpts = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+            const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: true };
+
+            let dateStr = start.toLocaleDateString('en-SG', dateOpts); // e.g. Sat, 6 Dec 2025
+            const startTime = start.toLocaleTimeString('en-SG', timeOpts).toLowerCase();
+
+            if (event.end_date) {
+                const end = new Date(event.end_date);
+                const endTime = end.toLocaleTimeString('en-SG', timeOpts).toLowerCase();
+
+                // If same day, just show time range
+                if (start.toDateString() === end.toDateString()) {
+                    dateStr += ` • ${startTime} – ${endTime}`;
+                } else {
+                    // If multi-day, show end date too
+                    const endDateStr = end.toLocaleDateString('en-SG', { day: 'numeric', month: 'short' });
+                    dateStr += ` (${startTime}) – ${endDateStr} (${endTime})`;
+                }
+            } else {
+                // No end time provided
+                dateStr += ` • ${startTime}`;
+            }
+            els.date.textContent = dateStr;
+        } else {
+            els.date.textContent = 'Date TBA';
+        }
+        // ------------------------------------------
 
         // Badges
         let badgesHtml = '';
         const srcBadgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
         badgesHtml += `<span class="badge rounded-pill ${srcBadgeClass} fw-bold text-uppercase px-3 py-2">${event.source}</span>`;
         if (event.category && event.category !== 'other') {
-            badgesHtml += `<span class="badge rounded-pill bg-dark border border-secondary text-gray-300 text-uppercase px-3 py-2">${event.category}</span>`;
+            badgesHtml += `<span class="badge rounded-pill bg-dark border border-secondary text-gray-300 text-uppercase px-3 py-2 ms-2">${event.category}</span>`;
         }
         els.badges.innerHTML = badgesHtml;
 
@@ -403,7 +433,6 @@
 
         // Description
         if (event.description) {
-            // Simple newline to br
             els.desc.innerHTML = event.description.split('\n').map(line => `<p>${line}</p>`).join('');
         } else {
             els.desc.innerHTML = '<p class="text-muted fst-italic">No description provided.</p>';
@@ -412,9 +441,12 @@
         // Link
         if (event.registration_link) {
             els.regLink.href = event.registration_link;
+            els.regLink.classList.remove('disabled');
+            els.regLink.textContent = 'Register Now';
         } else {
             els.regLink.classList.add('disabled');
             els.regLink.textContent = 'No Registration Link';
+            els.regLink.href = '#';
         }
     }
 
