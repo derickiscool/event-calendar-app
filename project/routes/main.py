@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, jsonify
-from project.db import get_mongo_status, get_mariadb_status 
+from project.db import get_mongo_status, get_mariadb_status
 
-# Define a Blueprint for the core routes
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route("/")
@@ -49,18 +48,3 @@ def bookmarks():
     """Render the bookmarks page."""
     return render_template('bookmarks.html')
 
-@main_bp.route("/health")
-def health_check():
-    """Health check endpoint that checks database connections."""
-    mongo_status = get_mongo_status()
-    mariadb_status = get_mariadb_status()
-    
-    if mongo_status == "connected" and mariadb_status == "connected":
-        status_code = 200
-    else:
-        status_code = 500
-        
-    return jsonify({
-        "mongodb_status": mongo_status,
-        "mariadb_status": mariadb_status
-    }), status_code

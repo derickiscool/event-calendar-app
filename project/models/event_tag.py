@@ -7,6 +7,7 @@ class EventTag(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey("tag.id"), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=True)
     event_identifier = db.Column(db.String(45), nullable=True)
+    tag = db.relationship("Tag", backref="event_tags") 
 
     def as_dict(self):
         return {

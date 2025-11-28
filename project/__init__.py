@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+from .routes.main import main_bp 
 
 # 1. Load environment variables
 load_dotenv()
@@ -40,10 +41,8 @@ db.init_app(app)
 
 # CRITICAL: This one line is all that's needed to activate routes.py
 from project import routes 
-from project import core_routes
 
 # Import all new RESTful API blueprints
-from .api import api_bp
 from .routes.user import user_bp
 from .routes.user_profile import user_profile_bp
 from .routes.user_preference import user_preference_bp
@@ -54,13 +53,11 @@ from .routes.review import review_bp
 from .routes.registered_event import registered_event_bp
 from .routes.event_tag import event_tag_bp
 from .routes.auth import auth_bp
-from .core_routes import main_bp
 
 # Configure session secret key (needed for Flask sessions)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
 # Register Blueprints
-app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
