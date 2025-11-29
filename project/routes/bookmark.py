@@ -94,6 +94,7 @@ def add_bookmark():
     new_bookmark = Bookmark(
         user_id=session["user_id"],
         event_identifier=event_identifier,
+        event_id=None, 
         created_at=datetime.now()
     )
 
