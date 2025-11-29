@@ -106,52 +106,75 @@ function createEventCard(event) {
     const title = escapeHtml(event.title || 'Untitled Event');
     const venue = escapeHtml(event.venue || 'Venue TBA');
     const date = event.date || 'Date TBA';
-    const category = event.category || 'other';
     const source = event.source || 'unknown';
-    const sourceLabel = event.source_label || 'Event';
-
+    
     // Create badge HTML for source
-    const sourceBadge = `<span class="badge badge-${source}">${source === 'official' ? '🏛️ Official' : '👥 Community'}</span>`;
+    const badgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
+    const badgeText = event.source === 'official' ? 'Official' : 'Community';
 
     // Create tags HTML (show actual tags if available, fallback to category)
-    let tagBadges = '';
+    let tagsHtml = '';
     if (event.tags && event.tags.length > 0) {
-        tagBadges = event.tags.map(tag =>
-            `<span class="badge badge-tag">${escapeHtml(tag)}</span>`
-        ).join('');
-    } else if (category !== 'other') {
-        tagBadges = `<span class="badge badge-${category}">${formatCategory(category)}</span>`;
+        // Limit to 3 tags to prevent card overflow
+        const displayTags = event.tags.slice(0, 3);
+        tagsHtml = displayTags.map(tag => 
+            `<span class="me-2">${escapeHtml(tag)}</span>`
+        ).join(' • '); // Separator dot
+        
+        if (event.tags.length > 3) {
+            tagsHtml += ` • +${event.tags.length - 3}`;
+        }
+    } else {
+        tagsHtml = event.category || 'Event';
     }
 
+    // NEW: Creator Logic
+    let creatorHtml = '';
+    if (event.source === 'community' && event.creator) {
+        const avatar = event.creator.avatar || `https://ui-avatars.com/api/?name=${event.creator.username}&background=random`;
+        creatorHtml = `
+        <div class="d-flex align-items-center mt-2 pt-2 border-top border-secondary border-opacity-10">
+            <a href="/user/${event.creator.id}" class="d-flex align-items-center text-decoration-none" style="z-index: 2; position: relative;">
+                <img src="${avatar}" class="rounded-circle me-2" width="24" height="24">
+                <small class="text-secondary hover-white">By ${escapeHtml(event.creator.username)}</small>
+            </a>
+        </div>`;
+    }
+
+    // Using the exact card structure from your index.html script
     return `
-    <div class="card event-card" data-event-id="${event.id}" data-category="${category}" data-source="${source}">
-      <img 
-        src="${imageUrl}" 
-        alt="${title}"
-        onerror="this.onerror=null; this.src='${defaultImage}'"
-        class="card-img"
-      >
-      <div class="card-body">
-        <div class="card-badges">
-          ${tagBadges}
-          ${sourceBadge}
+    <div class="col">
+        <div class="event-card h-100 d-flex flex-column">
+            <div style="position: relative; height: 200px;">
+                <span class="badge-float ${badgeClass}">${badgeText}</span>
+                <img src="${imageUrl}" style="width:100%; height:100%; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+            </div>
+            <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                <!-- UPDATED: Shows multiple tags/categories -->
+                <small class="text-info fw-bold text-uppercase mb-2 text-truncate" style="font-size: 0.7rem; letter-spacing: 1px;">
+                    ${tagsHtml}
+                </small>
+                
+                <h5 class="text-white fw-bold mb-3 text-truncate" title="${title}">
+                    ${title}
+                </h5>
+                <div class="mt-auto">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-calendar3 text-gray-400 me-2"></i>
+                        <span class="text-gray-300 small">${escapeHtml(date)}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-geo-alt-fill text-gray-400 me-2"></i>
+                        <span class="text-gray-300 small text-truncate">${venue}</span>
+                    </div>
+                    ${creatorHtml} 
+                </div>
+            </div>
+            <div class="p-3 border-top border-secondary" style="border-color: rgba(255,255,255,0.08) !important;">
+                <a href="/event-detail?id=${event.id}" class="btn btn-outline-light btn-sm w-100 rounded-pill">View Details</a>
+            </div>
         </div>
-        <h3 class="card-title">${title}</h3>
-        <p class="card-meta">
-          <span class="meta-icon">📅</span> ${escapeHtml(date)}
-        </p>
-        <p class="card-meta">
-          <span class="meta-icon">📍</span> ${venue}
-        </p>
-        ${event.description ? `<p class="card-description">${truncateText(escapeHtml(event.description), 120)}</p>` : ''}
-        <div class="card-actions">
-          <button class="btn btn-sm btn-primary" onclick="viewEventDetails('${event.id}')">
-            View Details
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
+    </div>`;
 }
 
 /**

@@ -47,6 +47,15 @@
         background-color: #4ade80;
         color: #0f172a;
     }
+    
+    /* Tag Badges for Details Page */
+    .badge-tag-detail {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
 
     /* Sticky Sidebar Card */
     .action-card {
@@ -135,7 +144,7 @@
         <div class="event-hero mb-5">
             <img id="event-image" src="" alt="Event Image">
             <div class="event-hero-overlay">
-                <div class="d-flex gap-2 mb-3" id="event-badges">
+                <div class="d-flex flex-wrap gap-2 mb-3" id="event-badges">
                     <!-- JS Injects Badges Here -->
                 </div>
                 <h1 id="event-title" class="display-4 fw-bold text-white mb-2">Event Title</h1>
@@ -431,14 +440,21 @@
         }
         // ------------------------------------------
 
-        // Badges
+        // Badges (Updated to show TAGS)
         let badgesHtml = '';
         const srcBadgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
         badgesHtml += `<span class="badge rounded-pill ${srcBadgeClass} fw-bold text-uppercase px-3 py-2">${event.source}</span>`;
-        if (event.category && event.category !== 'other') {
-            badgesHtml += `<span class="badge rounded-pill bg-dark border border-secondary text-gray-300 text-uppercase px-3 py-2 ms-2">${event.category}</span>`;
+        
+        // Show ALL tags as badges
+        if (event.tags && event.tags.length > 0) {
+            event.tags.forEach(tag => {
+                badgesHtml += `<span class="badge rounded-pill badge-tag-detail text-uppercase px-3 py-2">${tag}</span>`;
+            });
+        } else if (event.category && event.category !== 'other') {
+            badgesHtml += `<span class="badge rounded-pill badge-tag-detail text-uppercase px-3 py-2">${event.category}</span>`;
         }
         els.badges.innerHTML = badgesHtml;
+
         const creatorCard = document.getElementById('creator-card');
         if (event.creator) {
             const avatar = event.creator.avatar || `https://ui-avatars.com/api/?name=${event.creator.username}&background=random`;
