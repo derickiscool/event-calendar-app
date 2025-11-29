@@ -8,7 +8,7 @@ class EventCache(db.Model):
     source = db.Column(db.Enum('official', 'community'), nullable=False)
     original_id = db.Column(db.String(255), nullable=False)        
     title = db.Column(db.String(255))
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     # Relationships
     reviews = db.relationship("Review", backref="cached_event", cascade="all, delete")
