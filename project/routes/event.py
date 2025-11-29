@@ -286,6 +286,11 @@ def get_unified_event(event_id):
 
             start_date_raw = event.get("start_date", "")
 
+            # --- FIX 1: Generate Category/Tags for Official Events ---
+            cat = _categorize_event(event.get("title", "") + " " + event.get("description", ""))
+            cat = cat.replace('-', ' ').title()
+            # ---------------------------------------------------------
+
             return jsonify(
                 {
                     "status": "success",
@@ -294,22 +299,25 @@ def get_unified_event(event_id):
                         "title": event.get("title"),
                         "description": event.get("description"),
                         "start_date": start_date_raw,
-                        "end_date": event.get("end_date"),  # Added this
+                        "end_date": event.get("end_date"),
                         "date": start_date_raw if start_date_raw else "Date TBA",
                         "venue": event.get("venue_name"),
                         "address": event.get("address"),
                         "image": event.get("image_url"),
                         "registration_link": event.get("registration_link"),
                         "source": "official",
+                        "tags": [cat],  # <--- ADD THIS LINE
+                        "category": cat # <--- ADD THIS LINE (Optional but good for consistency)
                     },
                 }
             )
 
         elif event_id.startswith("community_"):
-
+            # Ensure we eagerly load tags to prevent N+1 queries if possible, though .get() loads relationships lazily by default
             e = Event.query.get(int(event_id.replace("community_", "")))
             if not e:
                 return jsonify({"error": "Not Found"}), 404
+            
             creator_profile = e.creator.profile if e.creator else None
             creator_data = (
                 {
@@ -323,12 +331,15 @@ def get_unified_event(event_id):
             sg_time = (
                 e.start_datetime + timedelta(hours=8) if e.start_datetime else None
             )
-            # Format date for frontend
             formatted_date = (
                 sg_time.strftime("%Y-%m-%d %H:%M") if sg_time else "Date TBA"
             )
             venue_name = e.venue.name if e.venue else "TBA"
             venue_addr = e.venue.address if e.venue else ""
+
+            # --- FIX 2: Fetch Tags for Community Events ---
+            tags = [t.tag.tag_name for t in e.tags] if e.tags else []
+            # ----------------------------------------------
 
             return jsonify(
                 {
@@ -346,22 +357,21 @@ def get_unified_event(event_id):
                             (e.end_datetime.isoformat() + "Z")
                             if e.end_datetime
                             else None
-                        ),  # Added this
+                        ),
                         "date": formatted_date,
                         "venue": venue_name,
                         "address": venue_addr,
                         "image": e.image_url,
                         "source": "community",
-                        "creator": creator_data,  # <--- ADDED THIS
+                        "creator": creator_data,
+                        "tags": tags,  # <--- ADD THIS LINE
                     },
                 }
             )
 
     except Exception as ex:
-        print(f"Error fetching event: {ex}x")
+        print(f"Error fetching event: {ex}")
         return jsonify({"error": str(ex)}), 500
-
-
 # GET user's own events
 @event_bp.route("/events/my-events", methods=["GET"])
 def get_my_events():
