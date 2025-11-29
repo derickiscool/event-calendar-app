@@ -5,8 +5,7 @@ class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     
-    # [FIX] Added db.ForeignKey("event.id") back so Event.reviews works
-    event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=True) 
+
     
     # The real link to the Cache Table
     event_identifier = db.Column(db.String(255), db.ForeignKey("event_cache.event_identifier"), nullable=False)

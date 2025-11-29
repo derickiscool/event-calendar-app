@@ -111,7 +111,6 @@ def create_event_tag():
     new_tag = EventTag(
         tag_id=tag_id,
         event_identifier=event_identifier,
-        event_id=numeric_id # Optional legacy field
     )
     
     db.session.add(new_tag)

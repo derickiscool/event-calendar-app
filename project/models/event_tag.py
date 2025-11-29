@@ -8,8 +8,6 @@ class EventTag(db.Model):
     
     event_identifier = db.Column(db.String(255), db.ForeignKey("event_cache.event_identifier"), nullable=False)
     
-    event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=True)
-
     cached_event = db.relationship("EventCache", backref="tags")
     tag = db.relationship("Tag", backref="event_tags") 
 

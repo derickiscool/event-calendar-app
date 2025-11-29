@@ -109,7 +109,6 @@ def create_review():
     review = Review(
         user_id=session["user_id"],
         event_identifier=event_identifier, # Stores "official_xyz" or "community_1"
-        event_id=numeric_id,               # Stores 1 (or NULL if official)
         score=int(data.get("rating", 5)),
         title=data.get("title", ""),
         body=data.get("comment", ""),

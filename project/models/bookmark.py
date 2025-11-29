@@ -5,9 +5,7 @@ class Bookmark(db.Model):
     __tablename__ = "bookmark"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    
-    # Legacy support for internal events
-    event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=True)
+
     
     # Universal link to EventCache (supports both Official & Community)
     event_identifier = db.Column(db.String(255), db.ForeignKey("event_cache.event_identifier"), nullable=False)
