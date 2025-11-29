@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import os
-
+from datetime import datetime, timedelta
 from project.db import get_mongo_status, get_mariadb_status
 
 
@@ -180,24 +180,22 @@ def get_all_events():
                 if e.creator
                 else None
             )
-
+            sg_time = (
+                e.start_datetime + timedelta(hours=8) if e.start_datetime else None
+            )
             all_events.append(
                 {
                     "id": f"community_{e.id}",
                     "title": e.title,
                     "description": e.description,
-                    "date": (
-                        e.start_datetime.strftime("%Y-%m-%d %H:%M")
-                        if e.start_datetime
-                        else "TBA"
-                    ),
+                    "date": (sg_time.strftime("%Y-%m-%d %H:%M") if sg_time else "TBA"),
                     "venue": venue.name if venue else "TBA",
                     "location": venue.address if venue else "",
                     "image": e.image_url,
                     "category": cat,
                     "source": "community",
                     "start_date": (
-                        e.start_datetime.isoformat() if e.start_datetime else ""
+                        (e.start_datetime.isoformat() + "Z") if e.start_datetime else ""
                     ),
                     "tags": tags,
                     "creator": creator_data,  # <--- ADDED THIS
@@ -317,12 +315,13 @@ def get_unified_event(event_id):
                 }
                 if e.creator
                 else None
-            )   
+            )
+            sg_time = (
+                e.start_datetime + timedelta(hours=8) if e.start_datetime else None
+            )
             # Format date for frontend
             formatted_date = (
-                e.start_datetime.strftime("%Y-%m-%d %H:%M")
-                if e.start_datetime
-                else "Date TBA"
+                sg_time.strftime("%Y-%m-%d %H:%M") if sg_time else "Date TBA"
             )
             venue_name = e.venue.name if e.venue else "TBA"
             venue_addr = e.venue.address if e.venue else ""
@@ -335,10 +334,14 @@ def get_unified_event(event_id):
                         "title": e.title,
                         "description": e.description,
                         "start_date": (
-                            e.start_datetime.isoformat() if e.start_datetime else ""
+                            (e.start_datetime.isoformat() + "Z")
+                            if e.start_datetime
+                            else ""
                         ),
                         "end_date": (
-                            e.end_datetime.isoformat() if e.end_datetime else None
+                            (e.end_datetime.isoformat() + "Z")
+                            if e.end_datetime
+                            else None
                         ),  # Added this
                         "date": formatted_date,
                         "venue": venue_name,

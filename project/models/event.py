@@ -24,8 +24,9 @@ class Event(db.Model):
             "user_id": self.user_id,
             "title": self.title,
             "description": self.description,
-            "start_datetime": self.start_datetime.isoformat() if self.start_datetime else None,
-            "end_datetime": self.end_datetime.isoformat() if self.end_datetime else None,
+            # Fix: Append 'Z' to indicate UTC timezone
+            "start_datetime": (self.start_datetime.isoformat() + 'Z') if self.start_datetime else None,
+            "end_datetime": (self.end_datetime.isoformat() + 'Z') if self.end_datetime else None,
             "location": self.location,
             "image_url": self.image_url,
             "venue_id": self.venue_id,
