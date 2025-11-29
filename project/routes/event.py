@@ -97,12 +97,24 @@ def find_or_create_venue(name, address, postal_code):
 def _categorize_event(text):
     text_lower = text.lower()
     categories = {
-        "music": ["music", "concert", "band", "orchestra"],
-        "theatre": ["theatre", "theater", "play", "drama", "musical"],
-        "comedy": ["comedy", "stand-up", "funny"],
-        "film": ["film", "movie", "cinema"],
-        "visual-arts": ["art", "exhibition", "gallery", "painting"],
-        "workshops": ["workshop", "class", "course"],
+        "Comedy": ["comedy", "stand-up", "funny", "sitcom", "humor", "humour"],
+        "Crafts": ["craft", "crafts"],
+        "Dance": ["dance", "disco", "samba", "tango", "waltz"],
+        "Family Friendly": ["family", "kid", "kids"],
+        "Festival": ["festival", "festive", "competition", "fair"],
+        "Film": ["film", "movie", "cinema"],
+        "Food & Drink": ["food", "drink"],
+        "Free": ["free"],
+        "Literature": ["literature", "article", "poetry", "novel", "story"],
+        "Music": ["music", "concert", "band", "orchestra"],
+        "Nightlife": ["night", "party"],
+        "Outdoor": ["outdoor", "outside", "adventure"],
+        "Photography": ["photo", "photography", "picture", "image"],
+        "Tech": ["tech", "technology", "machine"],
+        "Theatre": ["theatre", "theater", "play", "drama", "musical"],
+        "Visual Arts": ["art", "exhibition", "gallery", "painting"],
+        "Wellness": ["health", "wellness", "yoga", "spa", "massage"],
+        "Workshops": ["workshop", "class", "course"],
     }
     for category, keywords in categories.items():
         if any(keyword in text_lower for keyword in keywords):
