@@ -1,4 +1,4 @@
-// profile.js - Handle profile viewing and editing
+// profile.js - Handle profile viewing, editing, reviews, and preferences
 const API_BASE = window.API_BASE || '/api';
 
 let currentProfile = null;
@@ -6,623 +6,314 @@ let selectedAvatarFile = null;
 let allTags = [];
 let userPreferences = [];
 
-// Fetch user profile data
-async function loadProfile() {
-  try {
-    const res = await fetch(`${API_BASE}/profile/me`, {
-      credentials: 'include'
-    });
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadProfile();
+    await loadTags(); // Load tags for preferences
 
-    if (!res.ok) {
-      if (res.status === 401) {
-        // Not logged in, redirect to login
-        window.location.href = '/login';
-        return;
-      }
-      throw new Error('Failed to load profile');
+    // --- EVENT LISTENERS ---
+
+    // 1. Edit/Cancel Mode Toggles
+    const editBtn = document.getElementById('edit-profile-btn'); // Add this ID to your "Edit Profile" button if you have one
+    if (editBtn) editBtn.addEventListener('click', enterEditMode);
+
+    // If you have a cancel button in the form
+    const cancelBtn = document.querySelector('button[onclick="window.location.href=\'/\'"]');
+    if (cancelBtn) {
+        cancelBtn.removeAttribute('onclick'); // Remove inline handler
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Since you don't have a "View Mode" div yet, we just redirect or reload
+            window.location.href = '/'; 
+        });
     }
 
-    const data = await res.json();
-    currentProfile = data;
-    displayProfile(data);
-  } catch (error) {
-    console.error('Error loading profile:', error);
-    showFeedback('Failed to load profile', 'error');
-  }
-}
-
-// Display profile data in view mode
-function displayProfile(data) {
-  const { user, profile } = data;
-
-  // Display user info
-  document.getElementById('username-display').textContent = user.username || '—';
-  document.getElementById('email-display').textContent = user.email || '—';
-
-  // Display profile info
-  document.getElementById('fname-display').textContent = profile.fname || '—';
-  document.getElementById('lname-display').textContent = profile.lname || '—';
-  document.getElementById('phone-display').textContent = profile.phone ? `+65 ${profile.phone}` : '—';
-  document.getElementById('postal-display').textContent = profile.postal_code || '—';
-
-  // Display avatar
-  const avatarImg = document.getElementById('avatar-display');
-  if (profile.avatar_url) {
-    avatarImg.src = profile.avatar_url;
-    avatarImg.onerror = function () {
-      this.src = '/static/assets/images/default-avatar.svg';
-    };
-  } else {
-    avatarImg.src = '/static/assets/images/default-avatar.svg';
-  }
-}
-
-// Populate edit form with current data
-function populateEditForm() {
-  if (!currentProfile) return;
-
-  const { profile } = currentProfile;
-
-  // Set avatar preview
-  const avatarPreview = document.getElementById('avatar-preview-img');
-  if (profile.avatar_url) {
-    avatarPreview.src = profile.avatar_url;
-  } else {
-    avatarPreview.src = '/static/assets/images/default-avatar.svg';
-  }
-
-  // Reset file input
-  selectedAvatarFile = null;
-  const fileInput = document.getElementById('avatar-upload');
-  if (fileInput) fileInput.value = '';
-
-  // Show/hide remove button
-  const removeBtn = document.getElementById('remove-avatar-btn');
-  if (removeBtn) {
-    removeBtn.style.display = profile.avatar_url ? 'inline-block' : 'none';
-  }
-
-  // Populate other fields
-  document.getElementById('fname').value = profile.fname || '';
-  document.getElementById('lname').value = profile.lname || '';
-  document.getElementById('phone').value = profile.phone || '';
-  document.getElementById('postal-code').value = profile.postal_code || '';
-}
-
-// Switch to edit mode
-function enterEditMode() {
-  document.getElementById('profile-view').classList.add('hidden');
-  document.getElementById('profile-edit').classList.remove('hidden');
-  populateEditForm();
-  clearErrors();
-}
-
-// Switch to view mode
-function exitEditMode() {
-  document.getElementById('profile-edit').classList.add('hidden');
-  document.getElementById('profile-view').classList.remove('hidden');
-  clearErrors();
-}
-
-// Validation functions
-function validateName(name, fieldName, required = false) {
-  if (!name && !required) return null; // Optional field
-  if (!name && required) return `${fieldName} is required`;
-  if (name.length > 45) return `${fieldName} must be less than 45 characters`;
-  if (!/^[a-zA-Z\s'-]+$/.test(name)) {
-    return `${fieldName} can only contain letters, spaces, hyphens, and apostrophes`;
-  }
-  return null;
-}
-
-function validatePhone(phone) {
-  if (!phone) return null; // Optional
-  if (phone.length !== 8) return 'Phone number must be exactly 8 digits';
-  if (!/^\d{8}$/.test(phone)) {
-    return 'Phone number must be 8 digits only (no spaces or symbols)';
-  }
-  return null;
-}
-
-function validatePostalCode(postal) {
-  if (!postal) return null; // Optional
-  if (postal.length !== 6) return 'Postal code must be exactly 6 digits';
-  if (!/^\d{6}$/.test(postal)) return 'Postal code must be 6 digits';
-  return null;
-}
-
-function validateAvatarFile(file) {
-  if (!file) return null; // Optional
-
-  // Check file type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  if (!allowedTypes.includes(file.type)) {
-    return 'Only JPEG, PNG, and WebP images are allowed';
-  }
-
-  // Check file size (3MB max)
-  const maxSize = 3 * 1024 * 1024; // 3MB in bytes
-  if (file.size > maxSize) {
-    return `File size must be less than 3MB (current: ${(file.size / 1024 / 1024).toFixed(2)}MB)`;
-  }
-
-  return null;
-}
-
-async function validateAvatarDimensions(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = new Image();
-      img.onload = function () {
-        const minSize = 268;
-        if (img.width < minSize || img.height < minSize) {
-          resolve(`Image dimensions must be at least ${minSize}×${minSize}px (current: ${img.width}×${img.height}px)`);
-        } else {
-          resolve(null);
-        }
-      };
-      img.onerror = function () {
-        resolve('Failed to load image');
-      };
-      img.src = e.target.result;
-    };
-    reader.onerror = function () {
-      resolve('Failed to read file');
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-// Show error message
-function showError(fieldId, message) {
-  const errorElement = document.getElementById(`${fieldId}-error`);
-  const inputElement = document.getElementById(fieldId);
-
-  if (errorElement) {
-    errorElement.textContent = message || '';
-    errorElement.style.display = message ? 'block' : 'none';
-  }
-
-  if (inputElement) {
-    if (message) {
-      inputElement.classList.add('error');
-    } else {
-      inputElement.classList.remove('error');
+    // 2. Avatar Upload
+    const avatarInput = document.getElementById('avatar-input');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', handleAvatarSelect);
     }
-  }
-}
 
-// Clear all errors
-function clearErrors() {
-  const errorElements = document.querySelectorAll('.error-message');
-  errorElements.forEach(el => {
-    el.textContent = '';
-    el.style.display = 'none';
-  });
-
-  const inputs = document.querySelectorAll('.profile-form input');
-  inputs.forEach(input => {
-    input.classList.remove('error');
-  });
-
-  const feedback = document.getElementById('profile-feedback');
-  if (feedback) {
-    feedback.textContent = '';
-  }
-}
-
-// Show feedback message
-function showFeedback(message, type = 'success') {
-  const feedback = document.getElementById('profile-feedback');
-  if (feedback) {
-    feedback.textContent = message;
-    feedback.style.color = type === 'error' ? '#ff5454' : '#4caf50';
-    feedback.style.display = 'block';
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      feedback.style.display = 'none';
-    }, 3000);
-  }
-}
-
-// Update profile
-async function updateProfile(formData) {
-  try {
-    const res = await fetch(`${API_BASE}/profile/me`, {
-      method: 'PUT',
-      credentials: 'include',
-      body: formData // FormData will set Content-Type automatically
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      return { success: true, profile: data.profile };
-    } else {
-      return { success: false, error: data.error || 'Update failed' };
+    // 3. Form Submission
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', handleProfileUpdate);
     }
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    return { success: false, error: 'Network error' };
-  }
-}
 
-// Initialize page
-document.addEventListener('DOMContentLoaded', () => {
-  // Load profile data
-  loadProfile();
-
-  // Load tags and preferences
-  loadTags();
-
-  // Edit button handler
-  const editBtn = document.getElementById('edit-profile-btn');
-  if (editBtn) {
-    editBtn.addEventListener('click', enterEditMode);
-  }
-
-  // Cancel button handler
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', exitEditMode);
-  }
-
-  // Avatar upload handlers
-  const chooseAvatarBtn = document.getElementById('choose-avatar-btn');
-  const avatarFileInput = document.getElementById('avatar-upload');
-  const removeAvatarBtn = document.getElementById('remove-avatar-btn');
-  const avatarPreview = document.getElementById('avatar-preview-img');
-
-  if (chooseAvatarBtn && avatarFileInput) {
-    chooseAvatarBtn.addEventListener('click', () => {
-      avatarFileInput.click();
-    });
-
-    avatarFileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      clearErrors();
-
-      // Validate file type and size
-      const fileError = validateAvatarFile(file);
-      if (fileError) {
-        showError('avatar', fileError);
-        avatarFileInput.value = '';
-        return;
-      }
-
-      // Validate dimensions
-      const dimensionError = await validateAvatarDimensions(file);
-      if (dimensionError) {
-        showError('avatar', dimensionError);
-        avatarFileInput.value = '';
-        return;
-      }
-
-      // File is valid, set preview and store file
-      selectedAvatarFile = file;
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        avatarPreview.src = e.target.result;
-        if (removeAvatarBtn) {
-          removeAvatarBtn.style.display = 'inline-block';
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  if (removeAvatarBtn) {
-    removeAvatarBtn.addEventListener('click', () => {
-      selectedAvatarFile = 'remove'; // Special marker to remove avatar
-      avatarPreview.src = '/static/assets/images/default-avatar.svg';
-      if (avatarFileInput) avatarFileInput.value = '';
-      removeAvatarBtn.style.display = 'none';
-    });
-  }
-
-  // Form validation on blur
-  const fnameInput = document.getElementById('fname');
-  const lnameInput = document.getElementById('lname');
-  const phoneInput = document.getElementById('phone');
-  const postalInput = document.getElementById('postal-code');
-
-  if (fnameInput) {
-    fnameInput.addEventListener('blur', () => {
-      const error = validateName(fnameInput.value.trim(), 'First name', false);
-      showError('fname-edit', error);
-    });
-  }
-
-  if (lnameInput) {
-    lnameInput.addEventListener('blur', () => {
-      const error = validateName(lnameInput.value.trim(), 'Last name', false);
-      showError('lname-edit', error);
-    });
-  }
-
-  if (phoneInput) {
-    phoneInput.addEventListener('blur', () => {
-      const error = validatePhone(phoneInput.value.trim());
-      showError('phone', error);
-    });
-  }
-
-  if (postalInput) {
-    postalInput.addEventListener('blur', () => {
-      const error = validatePostalCode(postalInput.value.trim());
-      showError('postal', error);
-    });
-  }
-
-  // Form submission handler
-  const profileForm = document.getElementById('profile-form');
-  if (profileForm) {
-    profileForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      clearErrors();
-
-      // Get form values
-      const fname = fnameInput.value.trim();
-      const lname = lnameInput.value.trim();
-      const phone = phoneInput.value.trim();
-      const postal = postalInput.value.trim();
-
-      // Validate all fields
-      let hasErrors = false;
-
-      const fnameError = validateName(fname, 'First name', false);
-      if (fnameError) {
-        showError('fname-edit', fnameError);
-        hasErrors = true;
-      }
-
-      const lnameError = validateName(lname, 'Last name', false);
-      if (lnameError) {
-        showError('lname-edit', lnameError);
-        hasErrors = true;
-      }
-
-      const phoneError = validatePhone(phone);
-      if (phoneError) {
-        showError('phone', phoneError);
-        hasErrors = true;
-      }
-
-      const postalError = validatePostalCode(postal);
-      if (postalError) {
-        showError('postal', postalError);
-        hasErrors = true;
-      }
-
-      if (hasErrors) {
-        showFeedback('Please fix the errors above', 'error');
-        return;
-      }
-
-      // Build FormData for file upload
-      const formData = new FormData();
-      formData.append('fname', fname);
-      formData.append('lname', lname);
-      formData.append('phone', phone);
-      formData.append('postal_code', postal);
-
-      // Handle avatar
-      if (selectedAvatarFile === 'remove') {
-        formData.append('remove_avatar', 'true');
-      } else if (selectedAvatarFile) {
-        formData.append('avatar', selectedAvatarFile);
-      }
-
-      const result = await updateProfile(formData);
-
-      if (result.success) {
-        showFeedback('Profile updated successfully!', 'success');
-        selectedAvatarFile = null; // Reset
-        // Reload profile data and exit edit mode
-        await loadProfile();
-        setTimeout(() => {
-          exitEditMode();
-        }, 1000);
-      } else {
-        showFeedback(result.error || 'Failed to update profile', 'error');
-      }
-    });
-  }
-
-  // Delete account button handler
-  const deleteAccountBtn = document.getElementById('delete-account-btn');
-  if (deleteAccountBtn) {
-    deleteAccountBtn.addEventListener('click', async () => {
-      await handleDeleteAccount();
-    });
-  }
+    // 4. Input Validation Listeners
+    setupValidationListeners();
 });
 
-// Handle delete account with confirmation
-async function handleDeleteAccount() {
-  // Show confirmation dialog
-  const confirmMessage = `WARNING: This action cannot be undone!\n\nDeleting your account will permanently remove:\n• Your profile and personal information\n• All events you created\n• All your reviews and Bookmarks\n• All uploaded images\n\nAre you absolutely sure you want to delete your account?`;
 
-  if (!confirm(confirmMessage)) {
-    return;
-  }
+// --- PROFILE LOADING & DISPLAY ---
 
-  // Second confirmation
-  const finalConfirm = confirm('This is your final warning. Delete account permanently?');
-  if (!finalConfirm) {
-    return;
-  }
+async function loadProfile() {
+    try {
+        const res = await fetch(`${API_BASE}/profile/me`, { credentials: 'include' });
 
-  try {
-    const res = await fetch(`${API_BASE}/delete-account`, {
-      method: 'DELETE',
-      credentials: 'include'
-    });
+        if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+        if (!res.ok) throw new Error('Failed to load profile');
 
-    const data = await res.json();
+        const data = await res.json();
+        currentProfile = data;
+        displayProfile(data);
 
-    if (res.ok && data.status === 'success') {
-      alert('Your account has been successfully deleted. You will now be redirected to the home page.');
-      window.location.href = '/';
-    } else {
-      alert(`Failed to delete account: ${data.message || 'Unknown error'}`);
+    } catch (e) {
+        console.error("Profile load error:", e);
+        showToast('Failed to load profile', 'text-bg-danger');
     }
-  } catch (error) {
-    console.error('Error deleting account:', error);
-    alert('Failed to delete account. Please try again or contact support.');
-  }
 }
 
-// ===== USER PREFERENCES / TAGS =====
+function displayProfile(data) {
+    const { user, profile, reviews } = data;
 
-// Load all available tags
+    // Sidebar Info
+    setText('display-username', user.username || 'User');
+    setText('display-email', user.email || '');
+
+    // Avatar
+    const avatarImg = document.getElementById('display-avatar');
+    if (avatarImg) {
+        if (profile.avatar_url) {
+            avatarImg.src = profile.avatar_url;
+        } else {
+            const initial = (user.username || 'U').charAt(0).toUpperCase();
+            avatarImg.src = `https://ui-avatars.com/api/?name=${initial}&background=3b82f6&color=fff&size=128`;
+        }
+    }
+
+    // Form Fields
+    setValue('fname', profile.fname);
+    setValue('lname', profile.lname);
+    setValue('phone', profile.phone);
+    setValue('postal', profile.postal_code);
+
+    // Render Reviews
+    renderMyReviews(reviews);
+}
+
+function renderMyReviews(reviews) {
+    const container = document.getElementById('my-reviews-list');
+    if (!container) return;
+
+    if (!reviews || reviews.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5 border border-dashed border-secondary border-opacity-25 rounded-3">
+                <i class="bi bi-chat-square-text text-secondary display-6 mb-3 d-block opacity-50"></i>
+                <p class="text-gray-400 mb-0">You haven't written any reviews yet.</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = reviews.map(r => {
+        const stars = '<i class="bi bi-star-fill"></i>'.repeat(r.score) + '<i class="bi bi-star"></i>'.repeat(5 - r.score);
+        const dateStr = new Date(r.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+        
+        return `
+            <div class="review-item" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+                <div class="review-header" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+                    <a href="/event-detail?id=${r.event_identifier}" class="review-event-title" style="color: #60a5fa; text-decoration: none; font-weight: 700;">
+                        <i class="bi bi-calendar-event me-2"></i> ${escapeHtml(r.event_title)}
+                    </a>
+                    <div class="text-end">
+                        <div class="review-stars mb-1" style="color: #fbbf24;">${stars}</div>
+                        <div class="review-date" style="font-size: 0.75rem; color: #64748b;">${dateStr}</div>
+                    </div>
+                </div>
+                
+                <div class="review-content">
+                    <h6 style="color: #e2e8f0; font-weight: 600;">${escapeHtml(r.title || 'No Title')}</h6>
+                    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0;">${escapeHtml(r.body || '')}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+
+// --- PREFERENCES / TAGS ---
+
 async function loadTags() {
-  try {
-    const res = await fetch(`${API_BASE}/tags`, {
-      credentials: 'include'
-    });
-
-    if (!res.ok) throw new Error('Failed to load tags');
-
-    allTags = await res.json();
-    await loadUserPreferences();
-  } catch (error) {
-    console.error('Error loading tags:', error);
-    showPreferencesFeedback('Failed to load tags', 'error');
-  }
+    try {
+        const res = await fetch(`${API_BASE}/tags`, { credentials: 'include' });
+        if (res.ok) {
+            allTags = await res.json();
+            await loadUserPreferences();
+        }
+    } catch (e) { console.error("Tags error:", e); }
 }
 
-// Load user's current preferences
 async function loadUserPreferences() {
-  try {
-    const res = await fetch(`${API_BASE}/preferences/me`, {
-      credentials: 'include'
-    });
-
-    if (!res.ok) throw new Error('Failed to load preferences');
-
-    const data = await res.json();
-    userPreferences = data.preferences.map(p => p.tag_id);
-
-    renderTags();
-  } catch (error) {
-    console.error('Error loading preferences:', error);
-    showPreferencesFeedback('Failed to load preferences', 'error');
-  }
+    try {
+        const res = await fetch(`${API_BASE}/preferences/me`, { credentials: 'include' });
+        if (res.ok) {
+            const data = await res.json();
+            userPreferences = data.preferences.map(p => p.tag_id);
+            renderTags();
+        }
+    } catch (e) { console.error("Prefs error:", e); }
 }
 
-// Render tags as selectable chips
 function renderTags() {
-  const container = document.getElementById('tags-container');
-  if (!container) return;
+    const container = document.getElementById('tags-container');
+    if (!container) return;
+    container.innerHTML = '';
 
-  if (allTags.length === 0) {
-    container.innerHTML = '<p class="empty-state">No tags available yet</p>';
-    return;
-  }
+    allTags.forEach(tag => {
+        const isActive = userPreferences.includes(tag.id);
+        const tagName = tag.tag_name || tag.name || 'Tag';
 
-  container.innerHTML = allTags.map(tag => {
-    const isSelected = userPreferences.includes(tag.id);
-    const icon = getTagIcon(tag.tag_name);
+        const pill = document.createElement('div');
+        pill.className = `tag-pill ${isActive ? 'active' : ''}`;
+        pill.innerHTML = `<span>${escapeHtml(tagName)}</span>`;
+        if (isActive) pill.innerHTML += '<i class="bi bi-check-circle-fill small"></i>';
 
-    return `
-      <div class="tag-chip ${isSelected ? 'selected' : ''}" 
-           data-tag-id="${tag.id}" 
-           onclick="togglePreference(${tag.id}, '${escapeHtml(tag.tag_name)}')">
-        <span class="tag-icon">${icon}</span>
-        <span>${escapeHtml(tag.tag_name)}</span>
-      </div>
-    `;
-  }).join('');
+        pill.onclick = () => toggleTag(tag.id, pill);
+        container.appendChild(pill);
+    });
 }
 
-// Toggle tag preference
-async function togglePreference(tagId, tagName) {
-  const isCurrentlySelected = userPreferences.includes(tagId);
+async function toggleTag(tagId, element) {
+    const isAdding = !element.classList.contains('active');
+    const method = isAdding ? 'POST' : 'DELETE';
+    const url = isAdding ? `${API_BASE}/preferences/me` : `${API_BASE}/preferences/me/${tagId}`;
+    const options = { method: method };
 
-  try {
-    if (isCurrentlySelected) {
-      // Remove preference
-      const res = await fetch(`${API_BASE}/preferences/me/${tagId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (!res.ok) throw new Error('Failed to remove preference');
-
-      userPreferences = userPreferences.filter(id => id !== tagId);
-      showPreferencesFeedback(`Removed "${tagName}" from your interests`, 'success');
-    } else {
-      // Add preference
-      const res = await fetch(`${API_BASE}/preferences/me`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ tag_id: tagId })
-      });
-
-      if (!res.ok) throw new Error('Failed to add preference');
-
-      userPreferences.push(tagId);
-      showPreferencesFeedback(`Added "${tagName}" to your interests`, 'success');
+    if (isAdding) {
+        options.headers = { 'Content-Type': 'application/json' };
+        options.body = JSON.stringify({ tag_id: tagId });
     }
 
-    renderTags();
-  } catch (error) {
-    console.error('Error toggling preference:', error);
-    showPreferencesFeedback('Failed to update preference', 'error');
-  }
+    try {
+        // Optimistic UI update
+        element.classList.toggle('active');
+        const spanText = element.querySelector('span').innerText;
+        if (isAdding) element.innerHTML = `<span>${spanText}</span><i class="bi bi-check-circle-fill small"></i>`;
+        else element.innerHTML = `<span>${spanText}</span>`;
+
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error();
+    } catch (e) {
+        element.classList.toggle('active'); // Revert
+        showToast('Failed to update preference', 'text-bg-danger');
+    }
 }
 
-// Get icon for tag
-function getTagIcon(tagName) {
-  const icons = {
-    'music': '🎵',
-    'theatre': '🎭',
-    'comedy': '😂',
-    'film': '🎬',
-    'visual arts': '🎨',
-    'visual-arts': '🎨',
-    'workshops': '🛠️',
-    'food': '🍽️',
-    'sports': '⚽',
-    'technology': '💻',
-    'dance': '💃',
-    'literature': '📚',
-    'festival': '🎪',
-    'exhibition': '🖼️',
-    'concert': '🎤',
-    'performance': '🎪'
-  };
 
-  const normalized = tagName.toLowerCase().replace(/\s+/g, '-');
-  return icons[normalized] || icons[tagName.toLowerCase()] || '🏷️';
+// --- FORM HANDLING ---
+
+function handleAvatarSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('display-avatar').src = e.target.result;
+            showToast('Image selected. Click "Save Changes" to apply.', 'text-bg-info');
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
-// Show feedback for preferences
-function showPreferencesFeedback(message, type = 'success') {
-  const feedback = document.getElementById('preferences-feedback');
-  if (!feedback) return;
+async function handleProfileUpdate(e) {
+    e.preventDefault();
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
 
-  feedback.textContent = message;
-  feedback.className = `preferences-feedback ${type}`;
+    const formData = new FormData(e.target);
 
-  setTimeout(() => {
-    feedback.textContent = '';
-    feedback.className = 'preferences-feedback';
-  }, 3000);
+    try {
+        const res = await fetch(`${API_BASE}/profile/me`, {
+            method: 'PUT',
+            body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('Profile updated successfully!', 'text-bg-success');
+            // Update Navbar Avatar if it exists
+            const navImg = document.getElementById('nav-user-img');
+            const navInitial = document.getElementById('nav-user-initial');
+            if (data.profile.avatar_url && navImg) {
+                navImg.src = data.profile.avatar_url + '?t=' + new Date().getTime();
+            } else if (data.profile.avatar_url && navInitial) {
+                window.location.reload(); // Refresh to switch from letter to image
+            }
+            await loadProfile();
+        } else {
+            showToast(data.error || 'Update failed', 'text-bg-danger');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Server error', 'text-bg-danger');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+    }
 }
 
-// Utility function to escape HTML
+// --- ACCOUNT DELETION ---
+
+window.handleDeleteAccount = async function () {
+    const confirmMsg = "WARNING: This cannot be undone!\n\nDeleting your account will remove:\n• Your profile\n• All events you created\n• All reviews and bookmarks\n\nAre you absolutely sure?";
+    if (!confirm(confirmMsg)) return;
+
+    const doubleCheck = confirm("Final Confirmation: Delete account permanently?");
+    if (!doubleCheck) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/delete-account`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert('Account deleted. Redirecting to home...');
+            window.location.href = '/';
+        } else {
+            alert(data.message || 'Failed to delete account');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error occurred.');
+    }
+};
+
+
+// --- UTILITIES ---
+
+function setupValidationListeners() {
+    // Basic real-time validation visual cues could go here
+    // Currently handled by server response feedback
+}
+
+function showToast(msg, bgClass) {
+    const el = document.getElementById('liveToast');
+    if (!el) return;
+    document.getElementById('toast-message').textContent = msg;
+    el.className = `toast align-items-center border-0 ${bgClass}`;
+    new bootstrap.Toast(el).show();
+}
+
+function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
+function setValue(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+}
+
 function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
-
-// Make togglePreference available globally
-window.togglePreference = togglePreference;

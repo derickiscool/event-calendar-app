@@ -21,6 +21,7 @@ class Review(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "event_identifier": self.event_identifier,
+            "event_id": self.event_id,
             "score": self.score,
             "title": self.title,
             "body": self.body,

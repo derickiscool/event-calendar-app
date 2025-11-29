@@ -17,6 +17,7 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         padding: 2rem;
+        min-height: 600px; /* Prevent jumpiness when switching tabs */
     }
 
     /* Avatar Styling */
@@ -106,6 +107,109 @@
         border-color: #3b82f6;
         color: #60a5fa;
     }
+
+   .nav-pills .nav-link {
+        color: #94a3b8;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        margin-right: 0.5rem;
+        display: flex;       /* Flexbox for alignment */
+        align-items: center; /* Vertical center */
+        gap: 0.5rem;         /* Space between icon and text */
+    }
+
+    .nav-pills .nav-link i {
+        font-size: 1.1rem;
+        color: inherit;
+    }
+
+    .nav-pills .nav-link span {
+        color: inherit;
+    }
+
+    .nav-pills .nav-link:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-pills .nav-link.active {
+        background: #3b82f6;
+        color: #fff !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .nav-pills .nav-link.active i,
+    .nav-pills .nav-link.active span {
+        color: #fff !important;
+    }
+    /* --- REVIEW CARD STYLES --- */
+    .review-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .review-item:hover {
+        transform: translateY(-2px);
+        border-color: rgba(59, 130, 246, 0.4);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 0.75rem;
+    }
+
+    .review-event-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #60a5fa;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .review-event-title:hover {
+        color: #93c5fd;
+        text-decoration: underline;
+    }
+
+    .review-date {
+        font-size: 0.75rem;
+        color: #64748b;
+        white-space: nowrap;
+    }
+
+    .review-content h6 {
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .review-content p {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 0;
+    }
+
+    .review-stars {
+        color: #fbbf24;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+    }
 </style>
 
 <div class="container py-5">
@@ -135,57 +239,76 @@
 
         <div class="col-lg-8">
             <div class="profile-main-card">
-                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-3 border-opacity-25">Profile
-                    Details</h4>
+                
+                <ul class="nav nav-pills mb-4 border-bottom border-secondary border-opacity-25 pb-3">
+                    <li class="nav-item">
+                        <button class="nav-link active d-flex align-items-center gap-2" id="tab-settings-btn" onclick="switchTab('settings')">
+                            <i class="bi bi-person-gear"></i>
+                            <span>Edit Profile</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link d-flex align-items-center gap-2" id="tab-reviews-btn" onclick="switchTab('reviews')">
+                            <i class="bi bi-star-fill"></i>
+                            <span>My Reviews</span>
+                        </button>
+                    </li>
+                </ul>
 
-                <form id="profile-form">
+                <div id="tab-settings-content">
+                    <form id="profile-form">
+                        <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display: none;">
 
-                    <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-custom">First Name</label>
+                                <input type="text" class="form-control form-control-dark rounded-3" id="fname" name="fname">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Last Name</label>
+                                <input type="text" class="form-control form-control-dark rounded-3" id="lname" name="lname">
+                            </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label-custom">First Name</label>
-                            <input type="text" class="form-control form-control-dark rounded-3" id="fname" name="fname">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Last Name</label>
-                            <input type="text" class="form-control form-control-dark rounded-3" id="lname" name="lname">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Phone Number</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary">+65</span>
-                                <input type="tel" class="form-control form-control-dark" id="phone" name="phone"
-                                    maxlength="8" placeholder="81234567">
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-dark border-secondary text-secondary">+65</span>
+                                    <input type="tel" class="form-control form-control-dark" id="phone" name="phone"
+                                        maxlength="8" placeholder="81234567">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Postal Code</label>
+                                <input type="text" class="form-control form-control-dark rounded-3" id="postal"
+                                    name="postal_code" maxlength="6">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Postal Code</label>
-                            <input type="text" class="form-control form-control-dark rounded-3" id="postal"
-                                name="postal_code" maxlength="6">
+
+                        <div class="mt-5">
+                            <h5 class="text-white fw-bold mb-3">Event Preferences</h5>
+                            <p class="text-secondary small mb-3">Select the categories you want to see on your home feed.</p>
+
+                            <div id="tags-container" class="d-flex flex-wrap gap-2">
+                                <span class="text-muted small">Loading tags...</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mt-5">
-                        <h5 class="text-white fw-bold mb-3">Event Preferences</h5>
-                        <p class="text-secondary small mb-3">Select the categories you want to see on your home feed.
-                        </p>
-
-                        <div id="tags-container" class="d-flex flex-wrap gap-2">
-                            <span class="text-muted small">Loading tags...</span>
+                        <div class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-3">
+                            <button type="button" class="btn btn-outline-light rounded-pill px-4"
+                                onclick="window.location.href='/'">Cancel</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold" id="save-btn">
+                                Save Changes
+                            </button>
                         </div>
-                    </div>
+                    </form>
+                </div>
 
-                    <div
-                        class="mt-5 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-3">
-                        <button type="button" class="btn btn-outline-light rounded-pill px-4"
-                            onclick="window.location.href='/'">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold" id="save-btn">
-                            Save Changes
-                        </button>
+                <div id="tab-reviews-content" style="display: none;">
+                    <div id="my-reviews-list" class="d-flex flex-column gap-3">
+                        <p class="text-muted small fst-italic">Loading reviews...</p>
                     </div>
-                </form>
+                </div>
+
             </div>
         </div>
     </div>
@@ -204,209 +327,28 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 <script>
-    const API_BASE = '/api';
-    let userTags = [];
-    let allTags = [];
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadProfile();
-        await loadPreferences();
-    });
-
-    // --- 1. LOAD PROFILE ---
-    async function loadProfile() {
-        try {
-            const res = await fetch(`${API_BASE}/profile/me`);
-
-            // Redirect if not authenticated
-            if (res.status === 401) {
-                window.location.href = '/login';
-                return;
-            }
-            if (!res.ok) throw new Error('Failed to load');
-            const data = await res.json();
-
-            const u = data.user;
-            const p = data.profile;
-
-            // Identity Sidebar
-            document.getElementById('display-username').textContent = u.username || 'User';
-            document.getElementById('display-email').textContent = u.email || '';
-
-            // Avatar Logic
-            if (p.avatar_url) {
-                document.getElementById('display-avatar').src = p.avatar_url;
-            } else {
-                const initial = (u.username || 'U').charAt(0).toUpperCase();
-                document.getElementById('display-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=3b82f6&color=fff&size=128`;
-            }
-
-            // Form Fields
-            document.getElementById('fname').value = p.fname || '';
-            document.getElementById('lname').value = p.lname || '';
-            document.getElementById('phone').value = p.phone || '';
-            document.getElementById('postal').value = p.postal_code || '';
-
-        } catch (e) { console.error("Profile load error:", e); }
-    }
-
-    // --- 2. PREFERENCES (Tags) ---
-    async function loadPreferences() {
-        try {
-            const resMe = await fetch(`${API_BASE}/preferences/me`);
-            if (resMe.ok) {
-                const data = await resMe.json();
-                userTags = data.preferences.map(p => p.tag_id);
-            }
-
-            const resAll = await fetch(`${API_BASE}/tags`);
-            if (resAll.ok) {
-                const data = await resAll.json();
-                allTags = data;
-                renderTags();
-            }
-        } catch (e) { console.error("Tags error:", e); }
-    }
-
-    function renderTags() {
-        const container = document.getElementById('tags-container');
-        container.innerHTML = '';
-
-        allTags.forEach(tag => {
-            const isActive = userTags.includes(tag.id);
-            const tagName = tag.tag_name || tag.name || 'Tag';
-
-            const pill = document.createElement('div');
-            pill.className = `tag-pill ${isActive ? 'active' : ''}`;
-            pill.innerHTML = `<span>${tagName}</span>`;
-            if (isActive) pill.innerHTML += '<i class="bi bi-check-circle-fill small"></i>';
-
-            pill.onclick = () => toggleTag(tag.id, pill);
-            container.appendChild(pill);
+    // Inline script for Tab Switching Logic only
+    function switchTab(tabName) {
+        // 1. Reset Buttons
+        document.querySelectorAll('.nav-pills .nav-link').forEach(btn => {
+            btn.classList.remove('active');
         });
-    }
+        
+        // 2. Hide All Content
+        document.getElementById('tab-settings-content').style.display = 'none';
+        document.getElementById('tab-reviews-content').style.display = 'none';
 
-    // --- 3. INTERACTIONS ---
-
-    async function toggleTag(tagId, element) {
-        const isAdding = !element.classList.contains('active');
-        const method = isAdding ? 'POST' : 'DELETE';
-        // Handle URL differences: DELETE uses ID in URL, POST uses body
-        const url = isAdding ? `${API_BASE}/preferences/me` : `${API_BASE}/preferences/me/${tagId}`;
-        const options = { method: method };
-
-        if (isAdding) {
-            options.headers = { 'Content-Type': 'application/json' };
-            options.body = JSON.stringify({ tag_id: tagId });
-        }
-
-        try {
-            element.classList.toggle('active');
-            const spanText = element.querySelector('span').innerText;
-            if (isAdding) element.innerHTML = `<span>${spanText}</span><i class="bi bi-check-circle-fill small"></i>`;
-            else element.innerHTML = `<span>${spanText}</span>`;
-
-            const res = await fetch(url, options);
-            if (!res.ok) throw new Error();
-        } catch (e) {
-            element.classList.toggle('active'); // Revert
-            showToast('Failed to update preference', 'text-bg-danger');
-        }
-    }
-
-    document.getElementById('avatar-input').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById('display-avatar').src = e.target.result;
-                showToast('Image selected. Click "Save Changes" to apply.', 'text-bg-info');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    document.getElementById('profile-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('save-btn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
-
-        const formData = new FormData(e.target);
-
-        try {
-            const res = await fetch(`${API_BASE}/profile/me`, {
-                method: 'PUT',
-                body: formData
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                showToast('Profile updated successfully!', 'text-bg-success');
-
-                // Navbar Avatar Update
-                const navImg = document.getElementById('nav-user-img');
-                const navInitial = document.getElementById('nav-user-initial');
-                const newAvatarUrl = data.profile.avatar_url;
-
-                if (newAvatarUrl) {
-                    if (navImg) {
-                        navImg.src = newAvatarUrl + '?t=' + new Date().getTime();
-                    } else if (navInitial) {
-                        window.location.reload();
-                        return;
-                    }
-                }
-
-                await loadProfile();
-            } else {
-                showToast(data.error || 'Update failed', 'text-bg-danger');
-            }
-        } catch (e) {
-            console.error(e);
-            showToast('Server error', 'text-bg-danger');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Save Changes';
-        }
-    });
-
-    // --- DELETE ACCOUNT FUNCTION ---
-    window.handleDeleteAccount = async function () {
-        const confirmMsg = "WARNING: This cannot be undone!\n\nDeleting your account will remove:\n• Your profile\n• All events you created\n• All reviews and bookmarks\n\nAre you absolutely sure?";
-
-        if (!confirm(confirmMsg)) return;
-
-        const doubleCheck = confirm("Final Confirmation: Delete account permanently?");
-        if (!doubleCheck) return;
-
-        try {
-            const res = await fetch(`${API_BASE}/delete-account`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                alert('Account deleted. Redirecting to home...');
-                window.location.href = '/';
-            } else {
-                alert(data.message || 'Failed to delete account');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Network error occurred.');
-        }
-    };
-
-    function showToast(msg, bgClass) {
-        const el = document.getElementById('liveToast');
-        document.getElementById('toast-message').textContent = msg;
-        el.className = `toast align-items-center border-0 ${bgClass}`;
-        new bootstrap.Toast(el).show();
+        // 3. Activate Selected
+        document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+        const contentDiv = document.getElementById(`tab-${tabName}-content`);
+        
+        // 4. Show Content with Animation
+        contentDiv.style.display = 'block';
+        contentDiv.style.opacity = 0;
+        setTimeout(() => contentDiv.style.opacity = 1, 50);
+        contentDiv.style.transition = 'opacity 0.2s ease-in-out';
     }
 </script>
 {% endblock %}

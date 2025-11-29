@@ -83,14 +83,24 @@ def get_my_profile():
         profile = UserProfile(user_id=user.id, fname="", lname="")
         db.session.add(profile)
         db.session.commit()
-    
+    reviews = Review.query.filter_by(user_id=user.id).order_by(Review.created_at.desc()).all()
+    reviews_data = []
+    for r in reviews:
+        data = r.as_dict()
+        # Add Event Title from the Cache Relationship
+        if r.cached_event:
+            data['event_title'] = r.cached_event.title
+        else:
+            data['event_title'] = "Event"
+        reviews_data.append(data)
     return jsonify({
         "user": {
             "id": user.id,
             "username": user.username,
             "email": user.email
         },
-        "profile": profile.as_dict()
+        "profile": profile.as_dict(),
+        "reviews": reviews_data
     })
 
 # PUT update current user's profile
