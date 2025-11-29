@@ -10,7 +10,7 @@ class Event(db.Model):
     start_datetime = db.Column(db.DateTime, nullable=False)
     end_datetime = db.Column(db.DateTime, nullable=False)
     location = db.Column(db.String(255))
-    image_url = db.Column(db.String(255))
+    image_url = db.Column(db.String(2048))
     venue_id = db.Column(db.Integer, db.ForeignKey("venue.id"), nullable=False)
 
     tags = db.relationship("EventTag", backref="event", cascade="all, delete")
