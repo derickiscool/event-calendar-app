@@ -14,7 +14,8 @@ class Event(db.Model):
     venue_id = db.Column(db.Integer, db.ForeignKey("venue.id"), nullable=False)
 
     tags = db.relationship("EventTag", backref="event", cascade="all, delete")
-    registered_users = db.relationship("RegisteredEvent", backref="event", cascade="all, delete")
+    # FIX: Renamed attribute to 'bookmarked_by' and target to "Bookmark"
+    bookmarked_by = db.relationship("Bookmark", backref="event", cascade="all, delete")
     reviews = db.relationship("Review", backref="event", cascade="all, delete")
 
     def as_dict(self):

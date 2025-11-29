@@ -6,6 +6,7 @@ import re
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
+from project.models import Event, Review
 
 user_profile_bp = Blueprint("user_profile", __name__)
 
@@ -184,4 +185,37 @@ def update_my_profile():
     return jsonify({
         "message": "Profile updated successfully",
         "profile": profile.as_dict()
+    })
+@user_profile_bp.route("/profile/<int:user_id>", methods=["GET"])
+def get_public_profile(user_id):
+    from project.models import User
+    
+    # 1. Fetch User & Profile
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    profile = UserProfile.query.get(user_id)
+    
+    # 2. Fetch User's Hosted Events
+    # Order by upcoming first
+    events = Event.query.filter_by(user_id=user_id).order_by(Event.start_datetime.desc()).all()
+    
+    # 3. Fetch User's Reviews
+    reviews = Review.query.filter_by(user_id=user_id).order_by(Review.created_at.desc()).all()
+    
+    # Format Response
+    return jsonify({
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "joined_at": "Member" # You could add a created_at to User model later
+        },
+        "profile": profile.as_dict() if profile else {},
+        "stats": {
+            "events_hosted": len(events),
+            "reviews_written": len(reviews)
+        },
+        "events": [e.as_dict() for e in events],
+        "reviews": [r.as_dict() for r in reviews]
     })

@@ -582,6 +582,19 @@
         let badgeClass = event.source === 'official' ? 'badge-official' : 'badge-community';
         let badgeText = event.source === 'official' ? 'Official' : 'Community';
 
+        // NEW: Creator Logic
+        let creatorHtml = '';
+        if (event.source === 'community' && event.creator) {
+            const avatar = event.creator.avatar || `https://ui-avatars.com/api/?name=${event.creator.username}&background=random`;
+            creatorHtml = `
+            <div class="d-flex align-items-center mt-2 pt-2 border-top border-secondary border-opacity-10">
+                <a href="/user/${event.creator.id}" class="d-flex align-items-center text-decoration-none" style="z-index: 2; position: relative;">
+                    <img src="${avatar}" class="rounded-circle me-2" width="24" height="24">
+                    <small class="text-secondary hover-white">By ${event.creator.username}</small>
+                </a>
+            </div>`;
+        }
+
         return `
         <div class="col">
             <div class="event-card h-100 d-flex flex-column">
@@ -605,6 +618,7 @@
                             <i class="bi bi-geo-alt-fill text-gray-400 me-2"></i>
                             <span class="text-gray-300 small text-truncate">${event.venue}</span>
                         </div>
+                        ${creatorHtml} 
                     </div>
                 </div>
                 <div class="p-3 border-top border-secondary" style="border-color: rgba(255,255,255,0.08) !important;">
@@ -613,7 +627,6 @@
             </div>
         </div>`;
     }
-
     function renderPagination(totalPages) {
         const pag = document.getElementById('pagination');
         pag.innerHTML = '';

@@ -55,3 +55,8 @@ def bookmarks():
 def about():
     """Renders the Statistics/About page."""
     return render_template('about.html')
+
+@main_bp.route("/user/<int:user_id>")
+def public_profile(user_id):
+    """Render the public profile page."""
+    return render_template('public-profile.html')

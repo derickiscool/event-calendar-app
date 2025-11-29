@@ -12,7 +12,8 @@ class User(db.Model):
     profile = db.relationship("UserProfile", backref="user", uselist=False, cascade="all, delete")
     events = db.relationship("Event", backref="creator", cascade="all, delete")
     reviews = db.relationship("Review", backref="user", cascade="all, delete")
-    registered_events = db.relationship("RegisteredEvent", backref="user", cascade="all, delete")
+    # FIX: Renamed attribute to 'bookmarks' and target to "Bookmark"
+    bookmarks = db.relationship("Bookmark", backref="user", cascade="all, delete")
     preferences = db.relationship("UserPreference", backref="user", cascade="all, delete")
 
     def set_password(self, password):
@@ -26,6 +27,5 @@ class User(db.Model):
             "id": self.id,
             "username": self.username,
             "email": self.email,
-            # Omit password hash in normal responses for security
             "profile": self.profile.as_dict() if self.profile else None
         }

@@ -1,27 +1,27 @@
+# project/routes/bookmark.py
 from flask import Blueprint, request, jsonify, session
-from project.models import db, RegisteredEvent
+from project.models import db, Bookmark
 from project.models.event_cache import EventCache
 from datetime import datetime
 
-registered_event_bp = Blueprint("registered_event", __name__)
+bookmark_bp = Blueprint("bookmark", __name__)
 
-# GET all registered events
-@registered_event_bp.route("/registered-events", methods=["GET"])
-def get_registered_events():
+# GET all bookmarks
+@bookmark_bp.route("/bookmarks", methods=["GET"])
+def get_bookmarks():
     if "user_id" not in session:
         return jsonify({"error": "Auth required"}), 401
         
-    regs = RegisteredEvent.query.filter_by(user_id=session["user_id"]).all()
+    bookmarks = Bookmark.query.filter_by(user_id=session["user_id"]).all()
     
-    # Return list of IDs so frontend knows what is bookmarked
     return jsonify({
         "status": "success",
-        "event_ids": [r.event_identifier for r in regs],
-        "bookmarks": [r.as_dict() for r in regs]
+        "event_ids": [b.event_identifier for b in bookmarks],
+        "bookmarks": [b.as_dict() for b in bookmarks]
     })
 
 # POST Toggle Bookmark (Save/Unsave)
-@registered_event_bp.route("/registered-events", methods=["POST"])
+@bookmark_bp.route("/bookmarks", methods=["POST"])
 def toggle_bookmark():
     if "user_id" not in session:
         return jsonify({"error": "You must be logged in to bookmark"}), 401
@@ -33,19 +33,18 @@ def toggle_bookmark():
         return jsonify({"error": "Event ID is required"}), 400
 
     # 1. Check if already bookmarked
-    existing = RegisteredEvent.query.filter_by(
+    existing = Bookmark.query.filter_by(
         user_id=session["user_id"],
         event_identifier=event_identifier
     ).first()
 
     if existing:
-        # If exists, REMOVE it (Toggle behavior is better for UX)
+        # REMOVE (Toggle off)
         db.session.delete(existing)
         db.session.commit()
         return jsonify({"status": "removed", "message": "Bookmark removed"}), 200
 
     # 2. [AUTO-CACHE] Ensure event exists in Cache Table
-    # (Crucial: Matches the logic we added to Reviews)
     cached_event = EventCache.query.get(event_identifier)
     
     if not cached_event:
@@ -77,12 +76,12 @@ def toggle_bookmark():
         except:
             db.session.rollback()
 
-    # 3. Create Bookmark (Backend generates timestamp)
-    new_bookmark = RegisteredEvent(
+    # 3. Create Bookmark
+    new_bookmark = Bookmark(
         user_id=session["user_id"],
         event_identifier=event_identifier,
-        event_id=None, # Legacy field
-        registered_at=datetime.now() # [FIX] Backend generates time
+        event_id=None, 
+        created_at=datetime.now()
     )
 
     try:

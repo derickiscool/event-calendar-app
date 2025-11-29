@@ -265,6 +265,21 @@
 
             <!-- RIGHT COLUMN: Sticky Sidebar -->
             <div class="col-lg-4">
+                <div id="creator-card" class="card bg-dark border-secondary border-opacity-25 mb-4"
+                    style="display: none;">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <img id="creator-avatar" src="" class="rounded-circle border border-secondary" width="50"
+                            height="50" style="object-fit: cover;">
+                        <div class="overflow-hidden">
+                            <small class="text-secondary text-uppercase fw-bold"
+                                style="font-size: 0.7rem; letter-spacing: 1px;">Hosted By</small>
+                            <h6 class="text-white m-0 text-truncate">
+                                <a id="creator-link" href="#"
+                                    class="text-white text-decoration-none stretched-link"></a>
+                            </h6>
+                        </div>
+                    </div>
+                </div>
                 <div class="action-card p-4">
                     <h4 class="text-white fw-bold mb-4">Event Actions</h4>
 
@@ -424,7 +439,21 @@
             badgesHtml += `<span class="badge rounded-pill bg-dark border border-secondary text-gray-300 text-uppercase px-3 py-2 ms-2">${event.category}</span>`;
         }
         els.badges.innerHTML = badgesHtml;
+        const creatorCard = document.getElementById('creator-card');
+        if (event.creator) {
+            const avatar = event.creator.avatar || `https://ui-avatars.com/api/?name=${event.creator.username}&background=random`;
 
+            document.getElementById('creator-avatar').src = avatar;
+
+            const link = document.getElementById('creator-link');
+            link.textContent = event.creator.username;
+            link.href = `/user/${event.creator.id}`;
+
+            creatorCard.style.display = 'block';
+        } else {
+            // Hide for Official events or if no creator data
+            creatorCard.style.display = 'none';
+        }
         // Location
         if (event.address || event.location) {
             els.locationBox.style.display = 'block';
@@ -471,7 +500,7 @@
     async function checkBookmarkStatus() {
         if (!currentUserId) return;
         try {
-            const res = await fetch(`${API_BASE}/registered-events/check?event_id=${encodeURIComponent(eventId)}`);
+            const res = await fetch(`${API_BASE}/bookmarks/check?event_id=${encodeURIComponent(eventId)}`);
             if (res.ok) {
                 const data = await res.json();
                 isBookmarked = data.is_registered;
@@ -506,7 +535,7 @@
         els.bookmarkBtn.disabled = true;
         try {
             const method = isBookmarked ? 'DELETE' : 'POST';
-            const url = isBookmarked ? `${API_BASE}/registered-events/${encodeURIComponent(eventId)}` : `${API_BASE}/registered-events`;
+            const url = isBookmarked ? `${API_BASE}/bookmarks/${encodeURIComponent(eventId)}` : `${API_BASE}/bookmarks`;
             const body = isBookmarked ? null : JSON.stringify({ event_id: eventId });
 
             const res = await fetch(url, {
