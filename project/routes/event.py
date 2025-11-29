@@ -141,6 +141,8 @@ def get_all_events():
                 cat = _categorize_event(
                     e.get("title", "") + " " + e.get("description", "")
                 )
+                # Capitalize to match database tag format (e.g., "music" -> "Music")
+                cat = cat.replace('-', ' ').title()
                 start_date = e.get("start_date")
                 all_events.append(
                     {
