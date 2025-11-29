@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, session
-from project.models import db, Event, Venue, Tag
+from project.models import db, Event, Venue, Tag, EventCache
 from project.db import get_mongo_client
 from bson import ObjectId
 from werkzeug.utils import secure_filename
@@ -598,7 +598,16 @@ def delete_event(event_id):
     # Delete associated image if exists
     if event.image_url:
         delete_event_image(event.image_url)
-
+    event_identifier = f"community_{event.id}"
+    cache_entry = EventCache.query.get(event_identifier)
+    
+    # We delete the SQL Event first to clear Reviews/Tags via its own cascades
+    db.session.delete(event)
+    
+    # Then we delete the Cache to clear Bookmarks
+    if cache_entry:
+        db.session.delete(cache_entry)
+    # --- FIX END ---
     db.session.delete(event)
     db.session.commit()
     return jsonify({"message": "Event deleted successfully"})
