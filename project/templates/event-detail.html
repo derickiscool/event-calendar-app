@@ -252,9 +252,9 @@
                                     <button class="btn btn-sm btn-outline-secondary border-0"
                                         data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-dark">
-                                        <li><a class="dropdown-item" href="#" id="edit-user-review-btn"><i
+                                        <li><a class="dropdown-item" href="#Review" id="edit-user-review-btn"><i
                                                     class="bi bi-pencil me-2"></i>Edit</a></li>
-                                        <li><a class="dropdown-item text-danger" href="#" id="delete-user-review-btn"><i
+                                        <li><a class="dropdown-item text-danger" href="#Review" id="delete-user-review-btn"><i
                                                     class="bi bi-trash me-2"></i>Delete</a></li>
                                     </ul>
                                 </div>
@@ -640,7 +640,7 @@
             const html = `
             <div class="review-card">
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="fw-bold text-white">${r.user_name || 'Anonymous'}</span>
+                    <span class="fw-bold text-white">${r.username || 'Anonymous'}</span>
                     <span class="text-gray-400 small">${new Date(r.created_at).toLocaleDateString()}</span>
                 </div>
                 <div class="text-warning small mb-2">${generateStars(r.rating || r.score)}</div>
