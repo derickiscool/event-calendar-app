@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block title %}Profile Settings — Event Calendar{% endblock %}
 
@@ -219,6 +218,12 @@
     async function loadProfile() {
         try {
             const res = await fetch(`${API_BASE}/profile/me`);
+
+            // Redirect if not authenticated
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             if (!res.ok) throw new Error('Failed to load');
             const data = await res.json();
 
@@ -258,7 +263,7 @@
             const resAll = await fetch(`${API_BASE}/tags`);
             if (resAll.ok) {
                 const data = await resAll.json();
-                allTags = data; 
+                allTags = data;
                 renderTags();
             }
         } catch (e) { console.error("Tags error:", e); }
@@ -290,7 +295,7 @@
         // Handle URL differences: DELETE uses ID in URL, POST uses body
         const url = isAdding ? `${API_BASE}/preferences/me` : `${API_BASE}/preferences/me/${tagId}`;
         const options = { method: method };
-        
+
         if (isAdding) {
             options.headers = { 'Content-Type': 'application/json' };
             options.body = JSON.stringify({ tag_id: tagId });
@@ -340,7 +345,7 @@
 
             if (res.ok) {
                 showToast('Profile updated successfully!', 'text-bg-success');
-                
+
                 // Navbar Avatar Update
                 const navImg = document.getElementById('nav-user-img');
                 const navInitial = document.getElementById('nav-user-initial');
@@ -354,7 +359,7 @@
                         return;
                     }
                 }
-                
+
                 await loadProfile();
             } else {
                 showToast(data.error || 'Update failed', 'text-bg-danger');
@@ -369,11 +374,11 @@
     });
 
     // --- DELETE ACCOUNT FUNCTION ---
-    window.handleDeleteAccount = async function() {
+    window.handleDeleteAccount = async function () {
         const confirmMsg = "WARNING: This cannot be undone!\n\nDeleting your account will remove:\n• Your profile\n• All events you created\n• All reviews and bookmarks\n\nAre you absolutely sure?";
-        
+
         if (!confirm(confirmMsg)) return;
-        
+
         const doubleCheck = confirm("Final Confirmation: Delete account permanently?");
         if (!doubleCheck) return;
 

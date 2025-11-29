@@ -318,6 +318,8 @@
         filters: { source: 'all', category: 'all', search: '', time: 'upcoming', sort: 'default' },
         userPreferences: []
     };
+
+    const isLoggedIn = "{{ 'true' if session.get('user_id') else 'false' }}" === "true";
     async function init() {
         await loadCategories();
         await loadUserPreferences();
@@ -423,6 +425,22 @@
 
         // 1. Handle "For You" mode logic
         if (state.filters.category === 'preferences') {
+
+            // NEW: Check if user is logged in first
+            if (!isLoggedIn) {
+                if (row) row.style.setProperty('display', 'none', 'important');
+                showEmptyState(
+                    "Login Required",
+                    "Please log in to see your personalized event feed.",
+                    false
+                );
+                // Manually update the action button to a Login button
+                const actionDiv = document.getElementById('empty-action');
+                if (actionDiv) {
+                    actionDiv.innerHTML = `<a href="/login" class="btn btn-primary rounded-pill px-4">Log In</a>`;
+                }
+                return;
+            }
             // Case A: User has NO preferences set -> Show "No Interests" Empty State
             if (!state.userPreferences || state.userPreferences.length === 0) {
                 if (row) row.style.setProperty('display', 'none', 'important');

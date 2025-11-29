@@ -317,7 +317,7 @@ def get_unified_event(event_id):
                 }
                 if e.creator
                 else None
-            )
+            )   
             # Format date for frontend
             formatted_date = (
                 e.start_datetime.strftime("%Y-%m-%d %H:%M")
@@ -345,7 +345,7 @@ def get_unified_event(event_id):
                         "address": venue_addr,
                         "image": e.image_url,
                         "source": "community",
-                        'creator': creator_data # <--- ADDED THIS
+                        "creator": creator_data,  # <--- ADDED THIS
                     },
                 }
             )
