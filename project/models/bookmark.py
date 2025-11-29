@@ -12,7 +12,7 @@ class Bookmark(db.Model):
     # Universal link to EventCache (supports both Official & Community)
     event_identifier = db.Column(db.String(255), db.ForeignKey("event_cache.event_identifier"), nullable=False)
     
-    created_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False , default=db.func.now())
 
     def as_dict(self):
         return {
