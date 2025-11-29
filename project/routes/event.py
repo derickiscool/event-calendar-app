@@ -110,16 +110,6 @@ def _categorize_event(text):
     return "other"
 
 
-def _map_tag_to_category(tag_name):
-    mapping = {
-        "music": "music",
-        "theatre": "theatre",
-        "art": "visual-arts",
-        "workshop": "workshops",
-    }
-    return mapping.get(tag_name.lower(), "other")
-
-
 @event_bp.route("/all-events", methods=["GET"])
 def get_all_events():
     """Unified endpoint with Time Filtering & Explicit Sorting"""
@@ -169,7 +159,7 @@ def get_all_events():
         for e in community_events:
             venue = Venue.query.get(e.venue_id) if e.venue_id else None
             tags = [t.tag.tag_name for t in e.tags] if e.tags else []
-            cat = _map_tag_to_category(tags[0]) if tags else "other"
+            cat = tags[0] if tags else "Other"
 
             # NEW: Get Creator Info
             creator_profile = e.creator.profile if e.creator else None
