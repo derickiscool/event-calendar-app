@@ -503,7 +503,7 @@
             const res = await fetch(`${API_BASE}/bookmarks/check?event_id=${encodeURIComponent(eventId)}`);
             if (res.ok) {
                 const data = await res.json();
-                isBookmarked = data.is_registered;
+                isBookmarked = data.is_bookmarked;
                 updateBookmarkUI();
             }
         } catch (e) { }
@@ -545,13 +545,19 @@
             });
 
             if (res.ok) {
-                isBookmarked = !isBookmarked;
+                const data = await res.json();
+                // Backend returns status: "added" or "removed"
+                isBookmarked = data.status === 'added';
                 updateBookmarkUI();
                 showToast(isBookmarked ? 'Event saved!' : 'Event removed from bookmarks.', 'bg-success');
             } else {
-                showToast('Action failed.', 'bg-danger');
+                const error = await res.json().catch(() => ({}));
+                showToast(error.error || 'Action failed.', 'bg-danger');
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e); 
+            showToast('Network error. Please try again.', 'bg-danger');
+        }
         finally { els.bookmarkBtn.disabled = false; }
     }
 

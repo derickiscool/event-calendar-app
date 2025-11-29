@@ -20,9 +20,26 @@ def get_bookmarks():
         "bookmarks": [b.as_dict() for b in bookmarks]
     })
 
-# POST Toggle Bookmark (Save/Unsave)
+# GET check if specific event is bookmarked
+@bookmark_bp.route("/bookmarks/check", methods=["GET"])
+def check_bookmark():
+    if "user_id" not in session:
+        return jsonify({"is_bookmarked": False}), 200
+    
+    event_id = request.args.get("event_id")
+    if not event_id:
+        return jsonify({"error": "Event ID required"}), 400
+    
+    bookmark = Bookmark.query.filter_by(
+        user_id=session["user_id"],
+        event_identifier=event_id
+    ).first()
+    
+    return jsonify({"is_bookmarked": bookmark is not None}), 200
+
+# POST Add Bookmark
 @bookmark_bp.route("/bookmarks", methods=["POST"])
-def toggle_bookmark():
+def add_bookmark():
     if "user_id" not in session:
         return jsonify({"error": "You must be logged in to bookmark"}), 401
 
@@ -39,10 +56,7 @@ def toggle_bookmark():
     ).first()
 
     if existing:
-        # REMOVE (Toggle off)
-        db.session.delete(existing)
-        db.session.commit()
-        return jsonify({"status": "removed", "message": "Bookmark removed"}), 200
+        return jsonify({"status": "added", "message": "Already bookmarked"}), 200
 
     # 2. [AUTO-CACHE] Ensure event exists in Cache Table
     cached_event = EventCache.query.get(event_identifier)
@@ -88,6 +102,32 @@ def toggle_bookmark():
         db.session.add(new_bookmark)
         db.session.commit()
         return jsonify({"status": "added", "message": "Event saved"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+# DELETE Remove Bookmark
+@bookmark_bp.route("/bookmarks/<event_identifier>", methods=["DELETE"])
+def remove_bookmark(event_identifier):
+    if "user_id" not in session:
+        return jsonify({"error": "You must be logged in"}), 401
+
+    if not event_identifier:
+        return jsonify({"error": "Event ID is required"}), 400
+
+    # Find and delete the bookmark
+    bookmark = Bookmark.query.filter_by(
+        user_id=session["user_id"],
+        event_identifier=event_identifier
+    ).first()
+
+    if not bookmark:
+        return jsonify({"status": "removed", "message": "Bookmark not found"}), 200
+
+    try:
+        db.session.delete(bookmark)
+        db.session.commit()
+        return jsonify({"status": "removed", "message": "Bookmark removed"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
