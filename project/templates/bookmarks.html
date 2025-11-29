@@ -194,11 +194,10 @@
     if(cardCol) cardCol.style.opacity = '0.5';
 
     try {
-      // Use POST to toggle (remove) based on backend logic
-      const response = await fetch(`${API_BASE}/bookmarks`, {
-        method: 'POST',
+      // Use DELETE method to remove bookmark
+      const response = await fetch(`${API_BASE}/bookmarks/${encodeURIComponent(eventId)}`, {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_id: eventId }),
         credentials: 'include'
       });
 
