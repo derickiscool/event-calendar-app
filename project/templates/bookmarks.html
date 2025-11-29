@@ -69,7 +69,7 @@
   async function loadBookmarks() {
     try {
       // Get bookmarked event IDs
-      const response = await fetch(`${API_BASE}/registered-events`, {
+      const response = await fetch(`${API_BASE}/bookmarks`, {
         credentials: 'include'
       });
 
@@ -195,7 +195,7 @@
 
     try {
       // Use POST to toggle (remove) based on backend logic
-      const response = await fetch(`${API_BASE}/registered-events`, {
+      const response = await fetch(`${API_BASE}/bookmarks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_id: eventId }),

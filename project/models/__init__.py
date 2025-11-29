@@ -10,6 +10,6 @@ from .user_preference import UserPreference
 from .venue import Venue
 from .event import Event
 from .event_tag import EventTag
-from .registered_event import RegisteredEvent
+from .registered_event import Bookmark
 from .review import Review
 from .event_cache import EventCache

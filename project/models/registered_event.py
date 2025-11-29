@@ -1,7 +1,7 @@
 from . import db
 
-class RegisteredEvent(db.Model):
-    __tablename__ = "registered_event"
+class Bookmark(db.Model):
+    __tablename__ = "bookmark"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     

@@ -12,7 +12,7 @@ class EventCache(db.Model):
 
     # Relationships
     reviews = db.relationship("Review", backref="cached_event", cascade="all, delete")
-    bookmarks = db.relationship("RegisteredEvent", backref="cached_event", cascade="all, delete")
+    bookmarks = db.relationship("Bookmark", backref="cached_event", cascade="all, delete")
 
     def as_dict(self):
         return {

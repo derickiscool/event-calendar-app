@@ -12,7 +12,7 @@ class User(db.Model):
     profile = db.relationship("UserProfile", backref="user", uselist=False, cascade="all, delete")
     events = db.relationship("Event", backref="creator", cascade="all, delete")
     reviews = db.relationship("Review", backref="user", cascade="all, delete")
-    registered_events = db.relationship("RegisteredEvent", backref="user", cascade="all, delete")
+    bookmarks = db.relationship("Bookmark", backref="user", cascade="all, delete")
     preferences = db.relationship("UserPreference", backref="user", cascade="all, delete")
 
     def set_password(self, password):

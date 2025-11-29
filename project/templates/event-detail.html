@@ -439,7 +439,7 @@
     async function checkBookmarkStatus() {
         if (!currentUserId) return;
         try {
-            const res = await fetch(`${API_BASE}/registered-events/check?event_id=${encodeURIComponent(eventId)}`);
+            const res = await fetch(`${API_BASE}/bookmarks/check?event_id=${encodeURIComponent(eventId)}`);
             if (res.ok) {
                 const data = await res.json();
                 isBookmarked = data.is_registered;
@@ -474,7 +474,7 @@
         els.bookmarkBtn.disabled = true;
         try {
             const method = isBookmarked ? 'DELETE' : 'POST';
-            const url = isBookmarked ? `${API_BASE}/registered-events/${encodeURIComponent(eventId)}` : `${API_BASE}/registered-events`;
+            const url = isBookmarked ? `${API_BASE}/bookmarks/${encodeURIComponent(eventId)}` : `${API_BASE}/bookmarks`;
             const body = isBookmarked ? null : JSON.stringify({ event_id: eventId });
 
             const res = await fetch(url, {

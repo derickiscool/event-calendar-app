@@ -1,17 +1,17 @@
 from flask import Blueprint, request, jsonify, session
-from project.models import db, RegisteredEvent
+from project.models import db, Bookmark
 from project.models.event_cache import EventCache
 from datetime import datetime
 
-registered_event_bp = Blueprint("registered_event", __name__)
+bookmark_bp = Blueprint("Bookmark", __name__)
 
-# GET all registered events
-@registered_event_bp.route("/registered-events", methods=["GET"])
-def get_registered_events():
+# GET all bookmarked events
+@bookmark_bp.route("/bookmarks", methods=["GET"])
+def get_Bookmarks():
     if "user_id" not in session:
         return jsonify({"error": "Auth required"}), 401
         
-    regs = RegisteredEvent.query.filter_by(user_id=session["user_id"]).all()
+    regs = Bookmark.query.filter_by(user_id=session["user_id"]).all()
     
     # Return list of IDs so frontend knows what is bookmarked
     return jsonify({
@@ -21,7 +21,7 @@ def get_registered_events():
     })
 
 # POST Toggle Bookmark (Save/Unsave)
-@registered_event_bp.route("/registered-events", methods=["POST"])
+@bookmark_bp.route("/bookmarks", methods=["POST"])
 def toggle_bookmark():
     if "user_id" not in session:
         return jsonify({"error": "You must be logged in to bookmark"}), 401
@@ -33,7 +33,7 @@ def toggle_bookmark():
         return jsonify({"error": "Event ID is required"}), 400
 
     # 1. Check if already bookmarked
-    existing = RegisteredEvent.query.filter_by(
+    existing = Bookmark.query.filter_by(
         user_id=session["user_id"],
         event_identifier=event_identifier
     ).first()
@@ -78,7 +78,7 @@ def toggle_bookmark():
             db.session.rollback()
 
     # 3. Create Bookmark (Backend generates timestamp)
-    new_bookmark = RegisteredEvent(
+    new_bookmark = Bookmark(
         user_id=session["user_id"],
         event_identifier=event_identifier,
         event_id=None, # Legacy field
